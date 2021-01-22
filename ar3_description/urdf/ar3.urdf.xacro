@@ -1,0 +1,9 @@
+<?xml version="1.0" ?>
+<robot name="ar3" xmlns:xacro="http://ros.org/wiki/xacro">
+  <!-- include common xacro files -->
+  <xacro:include filename="$(find ar3_description)/urdf/ar3_macro.urdf.xacro" />
+
+  <!-- Instantiate AR3 robot. Call this xacro macro in your own urdf.xacro to
+       attach accessories to the AR3. -->
+  <xacro:ar3_macro/>
+</robot>
