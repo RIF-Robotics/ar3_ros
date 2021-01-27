@@ -2,8 +2,12 @@
 <robot name="ar3" xmlns:xacro="http://ros.org/wiki/xacro">
   <!-- include common xacro files -->
   <xacro:include filename="$(find ar3_description)/urdf/ar3_macro.urdf.xacro" />
+  <xacro:include filename="$(find ar3_description)/urdf/ar3_position_only.ros2_control.xacro" />
 
   <!-- Instantiate AR3 robot. Call this xacro macro in your own urdf.xacro to
        attach accessories to the AR3. -->
   <xacro:ar3_macro/>
+
+  <xacro:ar3_system_position_only name="ar3_position_only" prefix=""/>
+
 </robot>

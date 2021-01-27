@@ -2,18 +2,9 @@ import os
 import yaml
 from launch import LaunchDescription
 from launch_ros.actions import Node
+from launch.actions import ExecuteProcess
 from ament_index_python.packages import get_package_share_directory
 from launch.substitutions import LaunchConfiguration, Command
-
-#def load_file(package_name, file_path):
-#    package_path = get_package_share_directory(package_name)
-#    absolute_file_path = os.path.join(package_path, file_path)
-#
-#    try:
-#        with open(absolute_file_path, 'r') as file:
-#            return file.read()
-#    except EnvironmentError: # parent of IOError, OSError *and* WindowsError where available
-#        return None
 
 def load_yaml(package_name, *paths):
     package_path = get_package_share_directory(package_name)
@@ -25,18 +16,8 @@ def load_yaml(package_name, *paths):
     except EnvironmentError: # parent of IOError, OSError *and* WindowsError where available
         return None
 
-#def load_yaml(package_name, file_path):
-#    package_path = get_package_share_directory(package_name)
-#    absolute_file_path = os.path.join(package_path, file_path)
-#
-#    try:
-#        with open(absolute_file_path, 'r') as file:
-#            return yaml.safe_load(file)
-#    except EnvironmentError: # parent of IOError, OSError *and* WindowsError where available
-#        return None
-
-
 def generate_launch_description():
+    # TODO Get use_sim_time working with everything
     #use_sim_time = LaunchConfiguration('use_sim_time', default='false')
 
     # Find and parse URDF xacro
@@ -52,7 +33,6 @@ def generate_launch_description():
                                   Command(['xacro', ' ', srdf_xacro_path])}
 
     kinematics_yaml = load_yaml('ar3_moveit_config', 'config', 'kinematics.yaml')
-    robot_description_kinematics = { 'robot_description_kinematics' : kinematics_yaml }
 
     # Planning Functionality
     ompl_planning_pipeline_config = { 'move_group' : {
@@ -62,10 +42,8 @@ def generate_launch_description():
     ompl_planning_yaml = load_yaml('ar3_moveit_config', 'config', 'ompl_planning.yaml')
     ompl_planning_pipeline_config['move_group'].update(ompl_planning_yaml)
 
-    controllers_yaml = load_yaml('ar3_moveit_config', 'config',
-                                 'fake_controllers.yaml')
-
-    moveit_controllers = { 'moveit_simple_controller_manager' : controllers_yaml,
+    moveit_controllers = { 'moveit_simple_controller_manager' : load_yaml('ar3_moveit_config', 'config',
+                                                                          'ar3_controllers.yaml'),
                            'moveit_controller_manager': 'moveit_simple_controller_manager/MoveItSimpleControllerManager'}
 
     trajectory_execution = {'moveit_manage_controllers': True,
@@ -117,15 +95,39 @@ def generate_launch_description():
                                  output='both',
                                  parameters=[robot_description])
 
-    # Fake joint driver
-    fake_joint_driver_node = Node(package='fake_joint_ros2',
-                                  executable='fake_joint_driver_node',
-                                  output='screen',
-                                  emulate_tty=True,
-                                  parameters=[{'controller_name': 'ar3_arm_controller'},
-                                              os.path.join(get_package_share_directory("ar3_moveit_config"), "config", "sim_start_positions.yaml"),
-                                              os.path.join(get_package_share_directory("ar3_moveit_config"), "config", "ar3_controllers.yaml"),
-                                              robot_description])
+    # Run the joint_trajectory_controller and joint_state_controller in the
+    # controller manager node.
+    controller_manager_node = Node(
+        package='controller_manager',
+        executable='ros2_control_node',
+        parameters=[robot_description,
+                    os.path.join(get_package_share_directory("ar3_moveit_config"), "config", "controller_manager.yaml")],
+        output={
+            'stdout': 'screen',
+            'stderr': 'screen',
+        },
+    )
+
+    # Use a ROS service to start the joint_trajectory_controller in the controller manager
+    #   joint_trajectory_controller:
+    #     Subscribes to: /joint_trajectory_controller/joint_trajectory
+    #     Publishes to: /state
+    start_trajectory_controller = ExecuteProcess(
+        cmd=['ros2 service call controller_manager/load_and_start_controller controller_manager_msgs/srv/LoadStartController \'{name: "joint_trajectory_controller"}\''],
+        name='start_controller',
+        shell=True
+    )
+
+    # Use a ROS service to start the joint_trajectory_controller in the controller manager
+    #   joint_state_controller:
+    #     Publishes to: /dynamic_joint_states
+    #     Publishes to: /joint_states
+    start_state_controller = ExecuteProcess(
+        cmd=['ros2 service call controller_manager/load_and_start_controller controller_manager_msgs/srv/LoadStartController \'{name: "joint_state_controller"}\''],
+        name='start_controller',
+        shell=True
+    )
 
     return LaunchDescription([
-        rviz_node, static_tf, robot_state_publisher, run_move_group_node, fake_joint_driver_node])
+        controller_manager_node, start_trajectory_controller, start_state_controller,
+        rviz_node, static_tf, robot_state_publisher, run_move_group_node])

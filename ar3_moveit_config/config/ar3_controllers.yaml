@@ -1,51 +1,14 @@
-ar3_arm_controller:
-  ros__parameters:
-    joints:
-      - ar3_joint1
-      - ar3_joint2
-      - ar3_joint3
-      - ar3_joint4
-      - ar3_joint5
-      - ar3_joint6
-    write_op_modes:
-      - ar3_joint1
-      - ar3_joint2
-      - ar3_joint3
-      - ar3_joint4
-      - ar3_joint5
-      - ar3_joint6
+ controller_names:
+   - joint_trajectory_controller
 
-ros2_state_controller:
-  ros__parameters:
-    joints:
-      - ar3_joint1
-      - ar3_joint2
-      - ar3_joint3
-      - ar3_joint4
-      - ar3_joint5
-      - ar3_joint6
-    write_op_modes:
-      - ar3_joint1
-      - ar3_joint2
-      - ar3_joint3
-      - ar3_joint4
-      - ar3_joint5
-      - ar3_joint6
-
-
-fake_joint_trajectory_controller:
-  ros__parameters:
-    joints:
-      - ar3_joint1
-      - ar3_joint2
-      - ar3_joint3
-      - ar3_joint4
-      - ar3_joint5
-      - ar3_joint6
-    write_op_modes:
-      - ar3_joint1
-      - ar3_joint2
-      - ar3_joint3
-      - ar3_joint4
-      - ar3_joint5
-      - ar3_joint6
+ joint_trajectory_controller:
+   action_ns: follow_joint_trajectory
+   type: FollowJointTrajectory
+   default: true
+   joints:
+     - ar3_joint1
+     - ar3_joint2
+     - ar3_joint3
+     - ar3_joint4
+     - ar3_joint5
+     - ar3_joint6
