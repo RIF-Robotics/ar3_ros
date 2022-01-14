@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from os import path
+from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -47,7 +49,7 @@ def generate_launch_description():
     )
     declared_arguments.append(
         DeclareLaunchArgument(
-            "slowdown", default_value="50.0", description="Slowdown factor of the RRbot."
+            "slowdown", default_value="50.0", description="Slowdown factor of the AR3."
         )
     )
     declared_arguments.append(
@@ -65,6 +67,10 @@ def generate_launch_description():
         )
     )
 
+    ar3_base_launch = path.join(
+        get_package_share_directory('ar3_bringup'), 'launch',
+        'ar3_base.launch.py')
+
     # Initialize Arguments
     prefix = LaunchConfiguration("prefix")
     use_fake_hardware = LaunchConfiguration("use_fake_hardware")
@@ -74,9 +80,9 @@ def generate_launch_description():
     start_rviz = LaunchConfiguration("start_rviz")
 
     base_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([ThisLaunchFileDir(), "/rrbot_base.launch.py"]),
+        PythonLaunchDescriptionSource(ar3_base_launch),
         launch_arguments={
-            "description_file": "rrbot_system_position_only.urdf.xacro",
+            "description_file": "ar3_system_position_only.urdf.xacro",
             "prefix": prefix,
             "use_fake_hardware": use_fake_hardware,
             "fake_sensor_commands": fake_sensor_commands,
@@ -87,4 +93,3 @@ def generate_launch_description():
     )
 
     return LaunchDescription(declared_arguments + [base_launch])
-

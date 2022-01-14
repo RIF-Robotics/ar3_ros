@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(ar3_hardware)
+project(ar3_hardware_driver)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -12,39 +12,22 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(hardware_interface REQUIRED)
-find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
 
-## COMPILE
 add_library(
   ${PROJECT_NAME}
   SHARED
-  src/ar3_system_position_only.cpp
-)
+  src/ar3_encoder_switch_motor_serial_comm.cpp
+  )
 target_include_directories(
   ${PROJECT_NAME}
   PRIVATE
   include
-)
+  )
 ament_target_dependencies(
   ${PROJECT_NAME}
-  hardware_interface
-  pluginlib
   rclcpp
-  rclcpp_lifecycle
-)
-
-# Causes the visibility macros to use dllexport rather than dllimport,
-# which is appropriate when building the dll but not consuming it.
-target_compile_definitions(${PROJECT_NAME} PRIVATE "JOINT_STATE_BROADCASTER_BUILDING_DLL")
-
-# prevent pluginlib from using boost
-target_compile_definitions(${PROJECT_NAME} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
-
-# Export the pluginlib xml file
-pluginlib_export_plugin_description_file(hardware_interface ar3_hardware.xml)
+  )
 
 # INSTALL
 install(
@@ -70,15 +53,12 @@ endif()
 ## EXPORTS
 ament_export_include_directories(
   include
-)
+  )
 ament_export_libraries(
   ${PROJECT_NAME}
-)
+  )
 ament_export_dependencies(
-  hardware_interface
-  pluginlib
   rclcpp
-  rclcpp_lifecycle
-)
+  )
 
 ament_package()
