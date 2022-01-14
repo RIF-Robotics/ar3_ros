@@ -1,18 +1,15 @@
 <?xml version="1.0" ?>
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
-  <xacro:include filename="$(find ar3_description)/urdf/colors.urdf.xacro" />
 
-  <xacro:macro name="ar3_macro">
+  <xacro:macro name="ar3" params="parent prefix *origin">
 
-    <link name="ar3_link0">
-      <!-- KDL does not support a root link with an inertia -->
-      <!-- <inertial> -->
-      <!--   <origin xyz="-4.6941E-06 0.054174 0.038824" rpy="0 0 0" /> -->
-      <!--   <mass value="0.7102" />        -->
-      <!--   <inertia ixx="0.0039943" ixy="3.697E-07" ixz="-5.7364E-08" -->
-      <!--            iyy="0.0014946" iyz="-0.00036051" izz="0.0042554" /> -->
-      <!-- </inertial> -->
+    <joint name="${prefix}base_joint" type="fixed">
+      <xacro:insert_block name="origin" />
+      <parent link="${parent}"/>
+      <child link="${prefix}base_link" />
+    </joint>
 
+    <link name="${prefix}base_link">
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry>
@@ -29,7 +26,7 @@
       </collision>
     </link>
 
-    <link name="ar3_link1">
+    <link name="${prefix}link1">
       <inertial>
         <origin xyz="-0.022706 0.04294 -0.12205" rpy="0 0 0" />
         <mass value="0.88065" />
@@ -53,14 +50,14 @@
       </collision>
     </link>
 
-    <joint name="ar3_joint1" type="continuous">
+    <joint name="${prefix}joint1" type="continuous">
       <origin xyz="0 0 0.003445" rpy="3.1416 -1.0248E-21 -1.6736E-05" />
-      <parent link="ar3_link0" />
-      <child link="ar3_link1" />
+      <parent link="${prefix}base_link" />
+      <child link="${prefix}link1" />
       <axis xyz="0 0 1" />
     </joint>
 
-    <link name="ar3_link2">
+    <link name="${prefix}link2">
       <inertial>
         <origin xyz="0.064818 -0.11189 -0.038671" rpy="0 0 0" />
         <mass value="0.57738" />
@@ -84,14 +81,14 @@
       </collision>
     </link>
 
-    <joint name="ar3_joint2" type="continuous">
+    <joint name="${prefix}joint2" type="continuous">
       <origin xyz="0 0.064146 -0.16608" rpy="1.5708 0.5236 -1.5708" />
-      <parent link="ar3_link1" />
-      <child link="ar3_link2" />
+      <parent link="${prefix}link1" />
+      <child link="${prefix}link2" />
       <axis xyz="0 0 1" />
     </joint>
 
-    <link name="ar3_link3">
+    <link name="${prefix}link3">
       <inertial>
         <origin xyz="-0.00029765 -0.023661 -0.0019125" rpy="0 0 0" />
         <mass value="0.1787" />
@@ -115,14 +112,14 @@
       </collision>
     </link>
 
-    <joint name="ar3_joint3" type="continuous">
+    <joint name="${prefix}joint3" type="continuous">
       <origin xyz="0.1525 -0.26414 0" rpy="3.3431E-16 -1.4164E-16 -2.618" />
-      <parent link="ar3_link2" />
-      <child link="ar3_link3" />
+      <parent link="${prefix}link2" />
+      <child link="${prefix}link3" />
       <axis xyz="0 0 -1" />
     </joint>
 
-    <link name="ar3_link4">
+    <link name="${prefix}link4">
       <inertial>
         <origin xyz="-0.0016798 -0.00057319 -0.074404" rpy="0 0 0" />
         <mass value="0.34936" />
@@ -146,14 +143,14 @@
       </collision>
     </link>
 
-    <joint name="ar3_joint4" type="continuous">
+    <joint name="${prefix}joint4" type="continuous">
       <origin xyz="0 0 0.00675" rpy="1.5708 -1.2554 -1.5708" />
-      <parent link="ar3_link3" />
-      <child link="ar3_link4" />
+      <parent link="${prefix}link3" />
+      <child link="${prefix}link4" />
       <axis xyz="0 0 -1" />
     </joint>
 
-    <link name="ar3_link5">
+    <link name="${prefix}link5">
       <inertial>
         <origin xyz="0.0015066 -1.3102E-05 -0.012585" rpy="0 0 0" />
         <mass value="0.11562" />
@@ -177,14 +174,14 @@
       </collision>
     </link>
 
-    <joint name="ar3_joint5" type="continuous">
+    <joint name="${prefix}joint5" type="continuous">
       <origin xyz="0 0 -0.22225" rpy="3.1416 0 -2.8262" />
-      <parent link="ar3_link4" />
-      <child link="ar3_link5" />
+      <parent link="${prefix}link4" />
+      <child link="${prefix}link5" />
       <axis xyz="-1 0 0" />
     </joint>
 
-    <link name="ar3_link6">
+    <link name="${prefix}link6">
       <inertial>
         <origin xyz="2.9287E-10 -1.6472E-09 0.0091432" rpy="0 0 0" />
         <mass value="0.013863" />
@@ -208,11 +205,13 @@
       </collision>
     </link>
 
-    <joint name="ar3_joint6" type="continuous">
+    <joint name="${prefix}joint6" type="continuous">
       <origin xyz="-0.000294 0 0.02117" rpy="0 0 3.1416" />
-      <parent link="ar3_link5" />
-      <child link="ar3_link6" />
+      <parent link="${prefix}link5" />
+      <child link="${prefix}link6" />
       <axis xyz="0 0 -1" />
     </joint>
+
   </xacro:macro>
+
 </robot>

@@ -1,0 +1,9 @@
+<library path="ar3_hardware">
+  <class name="ar3_hardware/AR3SystemPositionOnlyHardware"
+         type="ar3_hardware::AR3SystemPositionOnlyHardware"
+         base_class_type="hardware_interface::SystemInterface">
+    <description>
+      Position-only control of the AR3 robot.
+    </description>
+  </class>
+</library>
