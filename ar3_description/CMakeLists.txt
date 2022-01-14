@@ -4,7 +4,7 @@ project(ar3_description)
 # find dependencies
 find_package(ament_cmake REQUIRED)
 
-install(DIRECTORY config gazebo launch meshes ros2_control urdf
+install(DIRECTORY config gazebo meshes ros2_control urdf
   DESTINATION share/${PROJECT_NAME}/
   )
 
