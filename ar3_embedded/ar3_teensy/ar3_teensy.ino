@@ -39,6 +39,8 @@
 
 */
 
+const char version[] = "0.0.1";
+
 // SPEED // millisecond multiplier // raise value to slow robot speeds // DEFAULT = 220
 const int SpeedMult = 220;
 
@@ -90,6 +92,9 @@ const int J6dirPin = 11;
 const int TRstepPin = 12;
 const int TRdirPin = 13;
 
+const int step_pins[] = {J1stepPin, J2stepPin, J3stepPin, J4stepPin, J5stepPin, J6stepPin};
+const int dir_pins[] = {J1dirPin, J2dirPin, J3dirPin, J4dirPin, J5dirPin, J6dirPin};
+
 //set encoder pins
 Encoder J1encPos(14, 15);
 Encoder J2encPos(16, 17);
@@ -105,6 +110,8 @@ const int J3calPin = 28;
 const int J4calPin = 29;
 const int J5calPin = 30;
 const int J6calPin = 31;
+const int limit_switches[] = {J1calPin, J2calPin, J3calPin, J4calPin, J5calPin, J6calPin};
+
 
 //set encoder multiplier
 const float J1encMult = 5.12;
@@ -166,7 +173,7 @@ void setup() {
   digitalWrite(J5stepPin, HIGH);
   digitalWrite(J6stepPin, HIGH);
 
-}
+} // setup()
 
 
 void loop() {
@@ -175,10 +182,10 @@ void loop() {
   WayPtDel = 0;
   while (Serial.available() > 0 or WayPtDel == 1)
   {
-    char recieved = Serial.read();
-    inData += recieved;
-    // Process message when new line character is recieved
-    if (recieved == '\n')
+    char received = Serial.read();
+    inData += received;
+    // Process message when new line character is received
+    if (received == '\n')
     {
       String function = inData.substring(0, 2);
 
@@ -194,6 +201,133 @@ void loop() {
         Serial.print("Done");
       }
 
+      // Manually read a limit switch value (e.g., "LS2")
+      if (function == "LS")
+      {
+        if (inData.length() < 4)
+        {
+          Serial.println("Specify a joint ID: LS3");
+        }
+        else
+        {
+          int joint_id = inData.substring(2, 3).toInt();
+          int limit_switch_pin = limit_switches[joint_id-1];
+
+          if (digitalRead(limit_switch_pin) == LOW)
+          {
+            Serial.println("Low");
+          } else if (digitalRead(limit_switch_pin) == HIGH)
+          {
+            Serial.println("High");
+          } else {
+            Serial.println("Unknown");
+          }
+        }
+      }
+
+      // Manually read an encoder value (e.g., "ER3")
+      if (function == "ER")
+      {
+        if (inData.length() < 4)
+        {
+          Serial.println("Specify a joint ID: ER1");
+        }
+        else
+        {
+          int joint_id = inData.substring(2, 3).toInt();
+          int enc_pos = 0;
+          if (joint_id == 1) {
+            enc_pos = J1encPos.read();
+          } else if (joint_id == 2) {
+            enc_pos = J2encPos.read();
+          } else if (joint_id == 3) {
+            enc_pos = J3encPos.read();
+          } else if (joint_id == 4) {
+            enc_pos = J4encPos.read();
+          } else if (joint_id == 5) {
+            enc_pos = J5encPos.read();
+          } else if (joint_id == 6) {
+            enc_pos = J6encPos.read();
+          }
+
+          Serial.println("Reading encoder: ");
+          Serial.print(enc_pos);
+          Serial.println();
+
+        }
+      }
+
+      if (function == "PP")
+      {
+        if (inData.length() < 4)
+        {
+          Serial.println("Specify a joint ID: PP1");
+        }
+        else
+        {
+          int joint_id = inData.substring(2, 3).toInt();
+          int dir_pin = dir_pins[joint_id-1];
+          int step_pin = step_pins[joint_id-1];
+
+          Serial.println("Stepping pin: ");
+          Serial.print(joint_id);
+
+          digitalWrite(dir_pin, HIGH);
+          delayMicroseconds(100);
+
+          for (int i = 0; i < 300; i++) {
+            digitalWrite(step_pin, LOW);
+            delayMicroseconds(1000);
+            digitalWrite(step_pin, HIGH);
+            delayMicroseconds(1000);
+          }
+        }
+      }
+
+      if (function == "PN")
+      {
+        if (inData.length() < 4)
+        {
+          Serial.println("Specify a joint ID: PN1");
+        }
+        else
+        {
+          int joint_id = inData.substring(2, 3).toInt();
+          int dir_pin = dir_pins[joint_id-1];
+          int step_pin = step_pins[joint_id-1];
+
+          Serial.println("Stepping pin: ");
+          Serial.print(joint_id);
+
+          digitalWrite(dir_pin, LOW);
+          delayMicroseconds(100);
+
+          for (int i = 0; i < 300; i++) {
+            digitalWrite(step_pin, LOW);
+            delayMicroseconds(1000);
+            digitalWrite(step_pin, HIGH);
+            delayMicroseconds(1000);
+          }
+        }
+      }
+
+      if (function == "PL")
+      {
+        Serial.println("Step Pin Low");
+        digitalWrite(J1stepPin, LOW);
+      }
+
+      if (function == "PH")
+      {
+        Serial.println("Step Pin High");
+        digitalWrite(J1stepPin, HIGH);
+      }
+
+      // Read the firmware version
+      if (function == "FV")
+      {
+        Serial.println(version);
+      }
 
       //-----COMMAND GET ROBOT POSITION---------------------------------------------------
       //-----------------------------------------------------------------------
@@ -627,7 +761,7 @@ void loop() {
         {
           Serial.print("F\r");
         }
-        inData = ""; // Clear recieved buffer
+        inData = ""; // Clear received buffer
       }
 
 
@@ -1593,18 +1727,18 @@ void loop() {
         int NumPtsStart = inData.indexOf('L');
         int WayPts = inData.substring(NumPtsStart + 1).toInt();
         Serial.println();
-        inData = ""; // Clear recieved buffer
+        inData = ""; // Clear received buffer
         //STORE WAYPOINTS
         int i = 0;
         while (i < WayPts) {
           while (Serial.available() > 0) {
-            char recieved = Serial.read();
-            inData += recieved;
-            if (recieved == '\n') {
+            char received = Serial.read();
+            inData += received;
+            if (received == '\n') {
               inData.toCharArray(WayPt[i], 70);
               Serial.println();
               ++i;
-              inData = ""; // Clear recieved buffer
+              inData = ""; // Clear received buffer
             }
           }
         }
@@ -2549,18 +2683,18 @@ void loop() {
         int NumPtsStart = inData.indexOf('C');
         int WayPts = inData.substring(NumPtsStart + 1).toInt();
         Serial.println();
-        inData = ""; // Clear recieved buffer
+        inData = ""; // Clear received buffer
         //STORE WAYPOINTS
         int i = 0;
         while (i < WayPts) {
           while (Serial.available() > 0) {
-            char recieved = Serial.read();
-            inData += recieved;
-            if (recieved == '\n') {
+            char received = Serial.read();
+            inData += received;
+            if (received == '\n') {
               inData.toCharArray(WayPt[i], 70);
               Serial.println();
               ++i;
-              inData = ""; // Clear recieved buffer
+              inData = ""; // Clear received buffer
             }
           }
         }
@@ -3488,19 +3622,14 @@ void loop() {
 
         WayPtDel = 0;
         Serial.println();
-      }
-      /// END OF MOVE C ///
-
-
-
-
-
-
-
+      } // if (function == "MC")
       else
       {
-        inData = ""; // Clear recieved buffer
+        inData = ""; // Clear received buffer
       }
-    }
-  }
-}
+
+      // Clear received buffer after each function is called.
+      inData = "";
+    } // if (received == '\n')
+  } // while (Serial.available())
+} // loop()
