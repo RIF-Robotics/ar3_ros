@@ -1576,7 +1576,7 @@ void loop() {
         Serial.println();
         ////////MOVE COMPLETE///////////
       }
-      
+
       /// END OF MOVE J ///
 
 
@@ -3496,7 +3496,7 @@ void loop() {
 
 
 
-      
+
       else
       {
         inData = ""; // Clear recieved buffer
