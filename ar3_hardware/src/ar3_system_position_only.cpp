@@ -33,11 +33,11 @@ CallbackReturn AR3SystemPositionOnlyHardware::on_init(
     return CallbackReturn::ERROR;
   }
 
-  // START: This part here is for exemplary purposes - Please do not copy to your production code
-  hw_start_sec_ = std::stod(info_.hardware_parameters["example_param_hw_start_duration_sec"]);
-  hw_stop_sec_ = std::stod(info_.hardware_parameters["example_param_hw_stop_duration_sec"]);
-  hw_slowdown_ = std::stod(info_.hardware_parameters["example_param_hw_slowdown"]);
-  // END: This part here is for exemplary purposes - Please do not copy to your production code
+  //// START: This part here is for exemplary purposes - Please do not copy to your production code
+  //hw_start_sec_ = std::stod(info_.hardware_parameters["example_param_hw_start_duration_sec"]);
+  //hw_stop_sec_ = std::stod(info_.hardware_parameters["example_param_hw_stop_duration_sec"]);
+  //hw_slowdown_ = std::stod(info_.hardware_parameters["example_param_hw_slowdown"]);
+  //// END: This part here is for exemplary purposes - Please do not copy to your production code
   hw_states_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
   hw_commands_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
 
@@ -89,15 +89,24 @@ CallbackReturn AR3SystemPositionOnlyHardware::on_configure(
 {
   // START: This part here is for exemplary purposes - Please do not copy to your production code
   RCLCPP_INFO(
-    rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Configuring ...please wait...");
+      rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Configuring ...please wait...");
 
-  for (int i = 0; i < hw_start_sec_; i++)
+  std::vector<double> enc_steps_per_deg =
+      {227.5555555555556, 284.4444444444444, 284.4444444444444,
+       223.0044444444444, 56.04224675948152, 108.0888888888889};
+
+  if (not comm_.init("/dev/ttyACM0", 115200, enc_steps_per_deg.size(), enc_steps_per_deg))
   {
-    rclcpp::sleep_for(std::chrono::seconds(1));
-    RCLCPP_INFO(
-      rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "%.1f seconds left...",
-      hw_start_sec_ - i);
+    RCLCPP_ERROR(rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Failed to initialize serial comm.");
   }
+
+  //for (int i = 0; i < hw_start_sec_; i++)
+  //{
+  //  rclcpp::sleep_for(std::chrono::seconds(1));
+  //  RCLCPP_INFO(
+  //    rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "%.1f seconds left...",
+  //    hw_start_sec_ - i);
+  //}
   // END: This part here is for exemplary purposes - Please do not copy to your production code
 
   // reset values always when configuring hardware
@@ -145,14 +154,14 @@ CallbackReturn AR3SystemPositionOnlyHardware::on_activate(
   RCLCPP_INFO(
     rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Activating ...please wait...");
 
-  for (int i = 0; i < hw_start_sec_; i++)
-  {
-    rclcpp::sleep_for(std::chrono::seconds(1));
-    RCLCPP_INFO(
-      rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "%.1f seconds left...",
-      hw_start_sec_ - i);
-  }
-  // END: This part here is for exemplary purposes - Please do not copy to your production code
+  //for (int i = 0; i < hw_start_sec_; i++)
+  //{
+  //  rclcpp::sleep_for(std::chrono::seconds(1));
+  //  RCLCPP_INFO(
+  //    rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "%.1f seconds left...",
+  //    hw_start_sec_ - i);
+  //}
+  //// END: This part here is for exemplary purposes - Please do not copy to your production code
 
   // command and state should be equal when starting
   for (uint i = 0; i < hw_states_.size(); i++)
@@ -172,13 +181,13 @@ CallbackReturn AR3SystemPositionOnlyHardware::on_deactivate(
   RCLCPP_INFO(
     rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Deactivating ...please wait...");
 
-  for (int i = 0; i < hw_stop_sec_; i++)
-  {
-    rclcpp::sleep_for(std::chrono::seconds(1));
-    RCLCPP_INFO(
-      rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "%.1f seconds left...",
-      hw_stop_sec_ - i);
-  }
+  //for (int i = 0; i < hw_stop_sec_; i++)
+  //{
+  //  rclcpp::sleep_for(std::chrono::seconds(1));
+  //  RCLCPP_INFO(
+  //    rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "%.1f seconds left...",
+  //    hw_stop_sec_ - i);
+  //}
 
   RCLCPP_INFO(rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Successfully deactivated!");
   // END: This part here is for exemplary purposes - Please do not copy to your production code
@@ -191,15 +200,15 @@ hardware_interface::return_type AR3SystemPositionOnlyHardware::read()
   // START: This part here is for exemplary purposes - Please do not copy to your production code
   RCLCPP_INFO(rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Reading...");
 
-  for (uint i = 0; i < hw_states_.size(); i++)
-  {
-    // Simulate AR3's movement
-    hw_states_[i] = hw_states_[i] + (hw_commands_[i] - hw_states_[i]) / hw_slowdown_;
-    RCLCPP_INFO(
-      rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Got state %.5f for joint %d!",
-      hw_states_[i], i);
-  }
-  RCLCPP_INFO(rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Joints successfully read!");
+  //for (uint i = 0; i < hw_states_.size(); i++)
+  //{
+  //  // Simulate AR3's movement
+  //  hw_states_[i] = hw_states_[i] + (hw_commands_[i] - hw_states_[i]) / hw_slowdown_;
+  //  RCLCPP_INFO(
+  //    rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Got state %.5f for joint %d!",
+  //    hw_states_[i], i);
+  //}
+  //RCLCPP_INFO(rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Joints successfully read!");
   // END: This part here is for exemplary purposes - Please do not copy to your production code
 
   return hardware_interface::return_type::OK;
@@ -210,16 +219,16 @@ hardware_interface::return_type AR3SystemPositionOnlyHardware::write()
   // START: This part here is for exemplary purposes - Please do not copy to your production code
   RCLCPP_INFO(rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Writing...");
 
-  for (uint i = 0; i < hw_commands_.size(); i++)
-  {
-    // Simulate sending commands to the hardware
-    RCLCPP_INFO(
-      rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Got command %.5f for joint %d!",
-      hw_commands_[i], i);
-  }
-  RCLCPP_INFO(
-    rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Joints successfully written!");
-  // END: This part here is for exemplary purposes - Please do not copy to your production code
+  //for (uint i = 0; i < hw_commands_.size(); i++)
+  //{
+  //  // Simulate sending commands to the hardware
+  //  RCLCPP_INFO(
+  //    rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Got command %.5f for joint %d!",
+  //    hw_commands_[i], i);
+  //}
+  //RCLCPP_INFO(
+  //  rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Joints successfully written!");
+  //// END: This part here is for exemplary purposes - Please do not copy to your production code
 
   return hardware_interface::return_type::OK;
 }

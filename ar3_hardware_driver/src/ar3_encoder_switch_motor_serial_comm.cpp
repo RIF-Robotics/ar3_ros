@@ -2,27 +2,30 @@
 
 #include <thread>
 #include <chrono>
-
-#include <boost/asio.hpp>
+#include <iostream>
 
 #define FW_VERSION "0.0.1"
 
-namespace ar3_hardware_driver
-{
+namespace ar3_hardware_driver {
 
-void AR3EncoderSwitchMotorSerialComm::init(std::string port, int baudrate, int num_joints, std::vector<double>& enc_steps_per_deg)
+AR3EncoderSwitchMotorSerialComm::AR3EncoderSwitchMotorSerialComm()
+    : serial_port_(io_service_)
+{
+}
+
+bool AR3EncoderSwitchMotorSerialComm::init(const std::string& device, int baudrate, int num_joints, const std::vector<double>& enc_steps_per_deg)
 {
   // @TODO read version from config
   version_ = FW_VERSION;
 
   // establish connection with teensy board
   boost::system::error_code ec;
-  serial_port_.open(port, ec);
+  serial_port_.open(device, ec);
 
   if (ec)
   {
-    ROS_WARN("Failed to connect to serial port %s", port.c_str());
-    return;
+    //ROS_WARN("Failed to connect to serial port %s", port.c_str());
+    return false;
   }
   else
   {
@@ -32,10 +35,12 @@ void AR3EncoderSwitchMotorSerialComm::init(std::string port, int baudrate, int n
   }
 
   initialised_ = false;
-  std::string msg = "STA" + version_ + "\n";
+  //std::string msg = "STA" + version_ + "\n";
+  std::string msg = "ER6\n";
 
   while (!initialised_)
   {
+    std::cout << "Trying to init..." << std::endl;
     //ROS_INFO("Waiting for response from Teensy on port %s", port.c_str());
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     exchange(msg);
@@ -60,14 +65,11 @@ void AR3EncoderSwitchMotorSerialComm::init(std::string port, int baudrate, int n
   {
     enc_commands_[i] = enc_steps_[i];
   }
+
+  return true;
 }
 
-AR3EncoderSwitchMotorSerialComm::AR3EncoderSwitchMotorSerialComm()
-    : serial_port_(io_service_)
-{
-}
-
-void AR3EncoderSwitchMotorSerialComm::setStepperSpeed(std::vector<double>& max_speed, std::vector<double>& max_accel)
+void AR3EncoderSwitchMotorSerialComm::set_stepper_speed(std::vector<double>& max_speed, std::vector<double>& max_accel)
 {
   std::string outMsg = "SS";
   for (int i = 0, charIdx = 0; i < num_joints_; ++i, charIdx += 2)
@@ -85,7 +87,7 @@ void AR3EncoderSwitchMotorSerialComm::setStepperSpeed(std::vector<double>& max_s
 void AR3EncoderSwitchMotorSerialComm::update(std::vector<double>& pos_commands, std::vector<double>& joint_positions)
 {
   // get updated position commands
-  jointPosToEncSteps(pos_commands, enc_commands_);
+  joint_pos_to_enc_steps(pos_commands, enc_commands_);
 
   // construct update message
   std::string outMsg = "MT";
@@ -100,70 +102,71 @@ void AR3EncoderSwitchMotorSerialComm::update(std::vector<double>& pos_commands, 
   exchange(outMsg);
 
   // return updated joint_positions
-  encStepsToJointPos(enc_steps_ , joint_positions);
+  enc_steps_to_joint_pos(enc_steps_ , joint_positions);
 }
 
-void AR3EncoderSwitchMotorSerialComm::calibrateJoints()
+void AR3EncoderSwitchMotorSerialComm::calibrate_joints()
 {
   std::string outMsg = "JC\n";
-  sendCommand(outMsg);
+  exchange(outMsg);
 }
 
-void AR3EncoderSwitchMotorSerialComm::getJointPositions(std::vector<double>& joint_positions)
+void AR3EncoderSwitchMotorSerialComm::get_joint_positions(std::vector<double>& joint_positions)
 {
   // get current joint positions
   std::string msg = "JP\n";
   exchange(msg);
-  encStepsToJointPos(enc_steps_, joint_positions);
+  enc_steps_to_joint_pos(enc_steps_, joint_positions);
 }
 
-// Send specific commands
-void AR3EncoderSwitchMotorSerialComm::sendCommand(std::string outMsg)
-{
-  exchange(outMsg);
-}
 
 // Send msg to board and collect data
 void AR3EncoderSwitchMotorSerialComm::exchange(std::string outMsg)
 {
   std::string inMsg;
   std::string errTransmit = "";
-  std::string errReceive = "";
 
   if (!transmit(outMsg, errTransmit))
   {
     // print err
+    std::cout << "Failed to transmit" << std::endl;
   }
 
-  if (!receive(inMsg, errReceive))
+  if (!receive(inMsg))
   {
     // print err
+    std::cout << "Failed to receive" << std::endl;
   }
+  else {
+    std::cout << "Received: " << inMsg << std::endl;
+  }
+
   // parse msg
   std::string header = inMsg.substr(0, 2);
   if (header == "ST")
   {
     // init acknowledgement
-    checkInit(inMsg);
+    check_init(inMsg);
   }
   else if (header == "JC")
   {
     // encoder calibration values
-    updateEncoderCalibrations(inMsg);
+    update_encoder_calibrations(inMsg);
   }
   else if (header == "JP")
   {
     // encoder steps
-    updateEncoderSteps(inMsg);
+    update_encoder_steps(inMsg);
   }
   else
   {
     // unknown header
-    ROS_WARN("Unknown header %s", header);
+    //ROS_WARN("Unknown header %s", header);
+    std::cout << "unknown header" << std::endl;
   }
 }
 
-bool AR3EncoderSwitchMotorSerialComm::transmit(std::string msg, std::string& err)
+bool AR3EncoderSwitchMotorSerialComm::transmit(const std::string& msg, std::string& err)
 {
   boost::system::error_code ec;
   const auto sendBuffer = boost::asio::buffer(msg.c_str(), msg.size());
@@ -181,7 +184,7 @@ bool AR3EncoderSwitchMotorSerialComm::transmit(std::string msg, std::string& err
   }
 }
 
-bool AR3EncoderSwitchMotorSerialComm::receive(std::string& inMsg, std::string& err)
+bool AR3EncoderSwitchMotorSerialComm::receive(std::string& inMsg)
 {
   char c;
   std::string msg = "";
@@ -195,6 +198,7 @@ bool AR3EncoderSwitchMotorSerialComm::receive(std::string& inMsg, std::string& e
         break;
       case '\n':
         eol = true;
+        //break; // TODO
       default:
         msg += c;
     }
@@ -203,7 +207,7 @@ bool AR3EncoderSwitchMotorSerialComm::receive(std::string& inMsg, std::string& e
   return true;
 }
 
-void AR3EncoderSwitchMotorSerialComm::checkInit(std::string msg)
+void AR3EncoderSwitchMotorSerialComm::check_init(const std::string& msg)
 {
   std::size_t ack_idx = msg.find("A", 2) + 1;
   std::size_t version_idx = msg.find("B", 2) + 1;
@@ -215,11 +219,11 @@ void AR3EncoderSwitchMotorSerialComm::checkInit(std::string msg)
   else
   {
     std::string version = msg.substr(version_idx);
-    ROS_ERROR("Firmware version mismatch %s", version);
+    //ROS_ERROR("Firmware version mismatch %s", version);
   }
 }
 
-void AR3EncoderSwitchMotorSerialComm::updateEncoderCalibrations(std::string msg)
+void AR3EncoderSwitchMotorSerialComm::update_encoder_calibrations(const std::string& msg)
 {
   size_t idx1 = msg.find("A", 2) + 1;
   size_t idx2 = msg.find("B", 2) + 1;
@@ -238,7 +242,7 @@ void AR3EncoderSwitchMotorSerialComm::updateEncoderCalibrations(std::string msg)
   //ROS_INFO("Successfully updated encoder calibrations");
 }
 
-void AR3EncoderSwitchMotorSerialComm::updateEncoderSteps(std::string msg)
+void AR3EncoderSwitchMotorSerialComm::update_encoder_steps(const std::string& msg)
 {
   size_t idx1 = msg.find("A", 2) + 1;
   size_t idx2 = msg.find("B", 2) + 1;
@@ -254,21 +258,22 @@ void AR3EncoderSwitchMotorSerialComm::updateEncoderSteps(std::string msg)
   enc_steps_[5] = std::stoi(msg.substr(idx6));
 }
 
-void AR3EncoderSwitchMotorSerialComm::encStepsToJointPos(std::vector<int>& enc_steps, std::vector<double>& joint_positions)
+void AR3EncoderSwitchMotorSerialComm::enc_steps_to_joint_pos(const std::vector<int>& enc_steps, std::vector<double>& joint_positions)
 {
-  for (int i = 0; i < enc_steps.size(); ++i)
+  for (unsigned int i = 0; i < enc_steps.size(); ++i)
   {
     // convert enc steps to joint deg
     joint_positions[i] = static_cast<double>(enc_steps[i]) / enc_steps_per_deg_[i];
   }
 }
 
-void AR3EncoderSwitchMotorSerialComm::jointPosToEncSteps(std::vector<double>& joint_positions, std::vector<int>& enc_steps)
+void AR3EncoderSwitchMotorSerialComm::joint_pos_to_enc_steps(const std::vector<double>& joint_positions, std::vector<int>& enc_steps)
 {
-  for (int i = 0; i < joint_positions.size(); ++i)
+  for (unsigned int i = 0; i < joint_positions.size(); ++i)
   {
     // convert joint deg to enc steps
     enc_steps[i] = static_cast<int>(joint_positions[i] * enc_steps_per_deg_[i]);
   }
 }
+
 } // namespace ar3_hardware_driver

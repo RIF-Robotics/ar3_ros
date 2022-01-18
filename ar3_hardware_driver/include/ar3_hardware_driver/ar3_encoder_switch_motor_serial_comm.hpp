@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+#include <boost/asio.hpp>
+
 #include "ar3_hardware_driver/visibility_control.h"
 
 namespace ar3_hardware_driver
@@ -11,10 +13,24 @@ namespace ar3_hardware_driver
 class AR3EncoderSwitchMotorSerialComm
 {
  public:
-  void init(std::string port, int baudrate, int num_joints, std::vector<double>& enc_steps_per_deg);
-  void set_stepper_speed(std::vector<double>& max_speed, std::vector<double>& max_accel);
-  void update(std::vector<double>& pos_commands, std::vector<double>& joint_states);
+  AR3EncoderSwitchMotorSerialComm();
+
+  AR3_HARDWARE_DRIVER_PUBLIC
+  bool init(const std::string& device, int baudrate, int num_joints,
+            const std::vector<double>& enc_steps_per_deg);
+
+  AR3_HARDWARE_DRIVER_PUBLIC
+  void set_stepper_speed(std::vector<double>& max_speed,
+                         std::vector<double>& max_accel);
+
+  AR3_HARDWARE_DRIVER_PUBLIC
+  void update(std::vector<double>& pos_commands,
+              std::vector<double>& joint_states);
+
+  AR3_HARDWARE_DRIVER_PUBLIC
   void get_joint_positions(std::vector<double>& joint_positions);
+
+  AR3_HARDWARE_DRIVER_PUBLIC
   void calibrate_joints();
 
  private:
@@ -30,16 +46,15 @@ class AR3EncoderSwitchMotorSerialComm
 
 
   void exchange(std::string outMsg);
-  bool transmit(std::string outMsg, std::string& err);
-  bool receive(std::string &inMsg, std::string& err);
-  void send_command(std::string outMsg);
+  bool transmit(const std::string& outMsg, std::string& err);
+  bool receive(std::string &inMsg);
 
-  void check_init(std::string msg);
-  void update_encoder_calibrations(std::string msg);
-  void update_encoder_steps(std::string msg);
+  void check_init(const std::string& msg);
+  void update_encoder_calibrations(const std::string& msg);
+  void update_encoder_steps(const std::string& msg);
 
-  void enc_steps_to_joint_pos(std::vector<int>& enc_steps, std::vector<double>& joint_positions);
-  void joint_pos_to_enc_steps(std::vector<double>& joint_positions, std::vector<int>& enc_steps);
+  void enc_steps_to_joint_pos(const std::vector<int>& enc_steps, std::vector<double>& joint_positions);
+  void joint_pos_to_enc_steps(const std::vector<double>& joint_positions, std::vector<int>& enc_steps);
 };
 
 }  // ar3_hardware_driver
