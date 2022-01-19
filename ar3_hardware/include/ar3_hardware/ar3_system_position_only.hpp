@@ -72,6 +72,10 @@ private:
   std::vector<double> hw_commands_;
   std::vector<double> hw_states_;
 
+  std::string serial_device_;
+  int serial_baudrate_;
+  std::string firmware_version_;
+
   ar3_hardware_driver::AR3EncoderSwitchMotorSerialComm comm_;
 
 };

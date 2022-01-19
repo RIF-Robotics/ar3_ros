@@ -40,6 +40,7 @@
 */
 
 const char version[] = "0.0.1";
+const int NUM_JOINTS = 6;
 
 // SPEED // millisecond multiplier // raise value to slow robot speeds // DEFAULT = 220
 const int SpeedMult = 220;
@@ -102,6 +103,12 @@ Encoder J3encPos(18, 19);
 Encoder J4encPos(20, 21);
 Encoder J5encPos(22, 23);
 Encoder J6encPos(24, 25);
+Encoder* encoders[] = {&J1encPos, &J2encPos, &J3encPos, &J4encPos, &J5encPos, &J6encPos};
+int current_encoder_positions[NUM_JOINTS];
+
+// +1 if encoder direction matches motor direction
+int encoder_dir[] = { 1, 1, 1, 1, 1, 1 };
+
 
 //set calibration limit switch pins
 const int J1calPin = 26;
@@ -123,8 +130,21 @@ const float J6encMult = 5.12;
 const float EncDiv = .1;
 
 
+void read_encoder_positions(int* encoder_positions)
+{
+  for (unsigned int i = 0; i < NUM_JOINTS; ++i) {
+    encoder_positions[i] = encoders[i]->read() * encoder_dir[i];
+  }
+}
 
-
+void array_to_message(int* array, int length, String* msg)
+{
+  *msg = "";
+  for (unsigned int i = 0 ; i < length; ++i) {
+    *msg += String(array[i]) + ",";
+  }
+  *msg += String("\n");
+}
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -175,7 +195,6 @@ void setup() {
 
 } // setup()
 
-
 void loop() {
 
   //start loop
@@ -202,7 +221,7 @@ void loop() {
       }
 
       // Manually read a limit switch value (e.g., "LS2")
-      if (function == "LS")
+      else if (function == "LS")
       {
         if (inData.length() < 4)
         {
@@ -226,7 +245,7 @@ void loop() {
       }
 
       // Manually read an encoder value (e.g., "ER3")
-      if (function == "ER")
+      else if (function == "ER")
       {
         if (inData.length() < 4)
         {
@@ -257,7 +276,7 @@ void loop() {
         }
       }
 
-      if (function == "PP")
+      else if (function == "PP")
       {
         if (inData.length() < 4)
         {
@@ -284,7 +303,7 @@ void loop() {
         }
       }
 
-      if (function == "PN")
+      else if (function == "PN")
       {
         if (inData.length() < 4)
         {
@@ -311,27 +330,37 @@ void loop() {
         }
       }
 
-      if (function == "PL")
+      else if (function == "PL")
       {
         Serial.println("Step Pin Low");
         digitalWrite(J1stepPin, LOW);
       }
 
-      if (function == "PH")
+      else if (function == "PH")
       {
         Serial.println("Step Pin High");
         digitalWrite(J1stepPin, HIGH);
       }
 
       // Read the firmware version
-      if (function == "FV")
+      else if (function == "FV")
       {
         Serial.println(version);
       }
 
+      else if (function == "JP")
+      {
+        // read current joint positions
+        read_encoder_positions(current_encoder_positions);
+
+        String msg = "";
+        array_to_message(current_encoder_positions, NUM_JOINTS, &msg);
+        Serial.print(msg);
+      }
+
       //-----COMMAND GET ROBOT POSITION---------------------------------------------------
       //-----------------------------------------------------------------------
-      if (function == "GP")
+      else if (function == "GP")
       {
         int J1Tstart = inData.indexOf('U');
         int J2Tstart = inData.indexOf('V');
@@ -416,7 +445,7 @@ void loop() {
 
       //-----COMMAND CALIBRATE ENCODERS-----------------------------------------
       //-----------------------------------------------------------------------
-      if (function == "LM")
+      else if (function == "LM")
       {
         int J1start = inData.indexOf('A');
         int J2start = inData.indexOf('B');
@@ -455,7 +484,7 @@ void loop() {
       //-----COMMAND DRIVE TO LIMIT SWITCHES-----------------------------------
       //-----------------------------------------------------------------------
       ///////////////////////////////////////////////////////////////////////////////////////////
-      if (function == "LL")
+      else if (function == "LL")
       {
         int J1start = inData.indexOf('A');
         int J2start = inData.indexOf('B');
@@ -772,7 +801,7 @@ void loop() {
       //----- MOVE J ---------------------------------------------------
       //-----------------------------------------------------------------------
       ///////////////////////////////////////////////////////////////////////////////////////////
-      if (function == "MJ")
+      else if (function == "MJ")
       {
         int J1curStep = J1encPos.read() / J1encMult;
         int J2curStep = J2encPos.read() / J2encMult;
@@ -1721,7 +1750,7 @@ void loop() {
       //----- MOVE L ---------------------------------------------------
       //-----------------------------------------------------------------------
       ///////////////////////////////////////////////////////////////////////////////////////////
-      if (function == "ML")
+      else if (function == "ML")
       {
         WayPtDel = 1;
         int NumPtsStart = inData.indexOf('L');
@@ -2677,7 +2706,7 @@ void loop() {
       //----- MOVE C ---------------------------------------------------
       //-----------------------------------------------------------------------
       ///////////////////////////////////////////////////////////////////////////////////////////
-      if (function == "MC")
+      else if (function == "MC")
       {
         WayPtDel = 1;
         int NumPtsStart = inData.indexOf('C');

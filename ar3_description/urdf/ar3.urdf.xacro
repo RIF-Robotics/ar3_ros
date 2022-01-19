@@ -3,6 +3,10 @@
 <robot xmlns:xacro="http://ros.org/wiki/xacro" name="ar3_robot">
   <xacro:arg name="prefix" default="" />
 
+  <xacro:arg name="serial_device" default="" />
+  <xacro:arg name="serial_baudrate" default="" />
+  <xacro:arg name="firmware_version" default="" />
+
   <!-- include AR3 macro -->
   <xacro:include filename="$(find ar3_description)/urdf/ar3_description.urdf.xacro" />
 
@@ -25,6 +29,6 @@
   </xacro:ar3>
 
   <xacro:ar3_ros2_control
-      name="ar3" prefix="$(arg prefix)"/>
+      name="ar3" prefix="$(arg prefix)" serial_device="$(arg serial_device)" serial_baudrate="$(arg serial_baudrate)" firmware_version="$(arg firmware_version)"/>
 
 </robot>

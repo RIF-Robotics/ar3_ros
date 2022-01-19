@@ -105,6 +105,27 @@ def generate_launch_description():
             description="Start RViz2 automatically with this launch file.",
         )
     )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "serial_device",
+            default_value="/dev/ttyACM0",
+            description="Serial device name.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "serial_baudrate",
+            default_value="115200",
+            description="Serial device baudrate.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "firmware_version",
+            default_value="0.0.1",
+            description="Serial firmware version.",
+        )
+    )
 
     # Initialize Arguments
     bringup_package = LaunchConfiguration("bringup_package")
@@ -118,6 +139,9 @@ def generate_launch_description():
     slowdown = LaunchConfiguration("slowdown")
     robot_controller = LaunchConfiguration("robot_controller")
     start_rviz = LaunchConfiguration("start_rviz")
+    serial_device = LaunchConfiguration("serial_device")
+    serial_baudrate = LaunchConfiguration("serial_baudrate")
+    firmware_version = LaunchConfiguration("firmware_version")
 
     # Get URDF via xacro
     robot_description_content = Command(
@@ -142,6 +166,16 @@ def generate_launch_description():
             " ",
             "slowdown:=",
             slowdown,
+            " ",
+            "serial_device:=",
+            serial_device,
+            " ",
+            "serial_baudrate:=",
+            serial_baudrate,
+            " ",
+            "firmware_version:=",
+            firmware_version,
+            " ",
         ]
     )
     robot_description = {"robot_description": robot_description_content}

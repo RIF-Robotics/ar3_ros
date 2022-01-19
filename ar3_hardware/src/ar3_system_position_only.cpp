@@ -33,11 +33,10 @@ CallbackReturn AR3SystemPositionOnlyHardware::on_init(
     return CallbackReturn::ERROR;
   }
 
-  //// START: This part here is for exemplary purposes - Please do not copy to your production code
-  //hw_start_sec_ = std::stod(info_.hardware_parameters["example_param_hw_start_duration_sec"]);
-  //hw_stop_sec_ = std::stod(info_.hardware_parameters["example_param_hw_stop_duration_sec"]);
-  //hw_slowdown_ = std::stod(info_.hardware_parameters["example_param_hw_slowdown"]);
-  //// END: This part here is for exemplary purposes - Please do not copy to your production code
+  serial_device_ = info_.hardware_parameters["serial_device"];
+  serial_baudrate_ = std::stod(info_.hardware_parameters["serial_baudrate"]);
+  firmware_version_ = info_.hardware_parameters["firmware_version"];
+
   hw_states_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
   hw_commands_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
 
@@ -87,27 +86,17 @@ CallbackReturn AR3SystemPositionOnlyHardware::on_init(
 CallbackReturn AR3SystemPositionOnlyHardware::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  // START: This part here is for exemplary purposes - Please do not copy to your production code
-  RCLCPP_INFO(
-      rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Configuring ...please wait...");
+  //std::vector<double> enc_steps_per_deg =
+  //    {227.5555555555556, 284.4444444444444, 284.4444444444444,
+  //     223.0044444444444, 56.04224675948152, 108.0888888888889};
 
-  std::vector<double> enc_steps_per_deg =
-      {227.5555555555556, 284.4444444444444, 284.4444444444444,
-       223.0044444444444, 56.04224675948152, 108.0888888888889};
-
-  if (not comm_.init("/dev/ttyACM0", 115200, enc_steps_per_deg.size(), enc_steps_per_deg))
+  if (not comm_.init(serial_device_, serial_baudrate_, firmware_version_))
   {
-    RCLCPP_ERROR(rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Failed to initialize serial comm.");
+    RCLCPP_ERROR(rclcpp::get_logger("AR3SystemPositionOnlyHardware"),
+                 "Failed to initialize serial comm with the following parameters:\nserial_device=%s\nserial_baudrate=%d\nfirmware_version=%s",
+                 serial_device_.c_str(), serial_baudrate_, firmware_version_.c_str());
+    return CallbackReturn::FAILURE;
   }
-
-  //for (int i = 0; i < hw_start_sec_; i++)
-  //{
-  //  rclcpp::sleep_for(std::chrono::seconds(1));
-  //  RCLCPP_INFO(
-  //    rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "%.1f seconds left...",
-  //    hw_start_sec_ - i);
-  //}
-  // END: This part here is for exemplary purposes - Please do not copy to your production code
 
   // reset values always when configuring hardware
   for (uint i = 0; i < hw_states_.size(); i++)
@@ -115,8 +104,6 @@ CallbackReturn AR3SystemPositionOnlyHardware::on_configure(
     hw_states_[i] = 0;
     hw_commands_[i] = 0;
   }
-
-  RCLCPP_INFO(rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Successfully configured!");
 
   return CallbackReturn::SUCCESS;
 }
@@ -150,48 +137,17 @@ AR3SystemPositionOnlyHardware::export_command_interfaces()
 CallbackReturn AR3SystemPositionOnlyHardware::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  // START: This part here is for exemplary purposes - Please do not copy to your production code
-  RCLCPP_INFO(
-    rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Activating ...please wait...");
-
-  //for (int i = 0; i < hw_start_sec_; i++)
-  //{
-  //  rclcpp::sleep_for(std::chrono::seconds(1));
-  //  RCLCPP_INFO(
-  //    rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "%.1f seconds left...",
-  //    hw_start_sec_ - i);
-  //}
-  //// END: This part here is for exemplary purposes - Please do not copy to your production code
-
   // command and state should be equal when starting
   for (uint i = 0; i < hw_states_.size(); i++)
   {
     hw_commands_[i] = hw_states_[i];
   }
-
-  RCLCPP_INFO(rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Successfully activated!");
-
   return CallbackReturn::SUCCESS;
 }
 
 CallbackReturn AR3SystemPositionOnlyHardware::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  // START: This part here is for exemplary purposes - Please do not copy to your production code
-  RCLCPP_INFO(
-    rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Deactivating ...please wait...");
-
-  //for (int i = 0; i < hw_stop_sec_; i++)
-  //{
-  //  rclcpp::sleep_for(std::chrono::seconds(1));
-  //  RCLCPP_INFO(
-  //    rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "%.1f seconds left...",
-  //    hw_stop_sec_ - i);
-  //}
-
-  RCLCPP_INFO(rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Successfully deactivated!");
-  // END: This part here is for exemplary purposes - Please do not copy to your production code
-
   return CallbackReturn::SUCCESS;
 }
 

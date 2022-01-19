@@ -3,21 +3,19 @@
 
 #include <string>
 #include <vector>
-
-#include <boost/asio.hpp>
+#include <memory>
 
 #include "ar3_hardware_driver/visibility_control.h"
+#include "ar3_hardware_driver/timeout_serial.h"
 
 namespace ar3_hardware_driver
 {
 class AR3EncoderSwitchMotorSerialComm
 {
  public:
-  AR3EncoderSwitchMotorSerialComm();
 
   AR3_HARDWARE_DRIVER_PUBLIC
-  bool init(const std::string& device, int baudrate, int num_joints,
-            const std::vector<double>& enc_steps_per_deg);
+  bool init(const std::string& device, int baudrate, const std::string& fw_version);
 
   AR3_HARDWARE_DRIVER_PUBLIC
   void set_stepper_speed(std::vector<double>& max_speed,
@@ -34,10 +32,10 @@ class AR3EncoderSwitchMotorSerialComm
   void calibrate_joints();
 
  private:
-  bool initialised_;
+  std::shared_ptr<TimeoutSerial> serial_;
+
+
   std::string version_;
-  boost::asio::io_service io_service_;
-  boost::asio::serial_port serial_port_;
   int num_joints_;
   std::vector<int> enc_commands_;
   std::vector<int> enc_steps_;
@@ -49,7 +47,6 @@ class AR3EncoderSwitchMotorSerialComm
   bool transmit(const std::string& outMsg, std::string& err);
   bool receive(std::string &inMsg);
 
-  void check_init(const std::string& msg);
   void update_encoder_calibrations(const std::string& msg);
   void update_encoder_steps(const std::string& msg);
 

@@ -18,6 +18,7 @@ add_library(
   ${PROJECT_NAME}
   SHARED
   src/ar3_encoder_switch_motor_serial_comm.cpp
+  src/timeout_serial.cpp
   )
 target_include_directories(
   ${PROJECT_NAME}
