@@ -72,6 +72,40 @@ private:
   std::vector<double> hw_commands_;
   std::vector<double> hw_states_;
 
+  std::vector<int> joint_encoder_counts_;
+
+  const int pulses_per_revolution_ = 512;
+  const double counts_per_revolution_ = pulses_per_revolution_ * 4;
+
+  // Reference: https://www.omc-stepperonline.com/ar3-open-source-robot-package-kit-stepper-motor-driver-power-supply-and-bracket.html
+  std::vector<double> gear_ratios_ = {
+    10.0,
+    50.0,
+    50.0,
+    13.0 + 212.0 / 289.0,
+    1.0, // TODO
+    19.0 + 38.0/187.0
+  };
+
+  std::vector<int> encoder_directions_ = {
+    +1,
+    -1,
+    +1,
+    +1,
+    +1,
+    -1
+  };
+
+
+  std::vector<int> encoder_zero_positions_ = {
+    static_cast<int>(7600 * 5.12),
+    static_cast<int>(2322 * 5.12),
+    static_cast<int>(0 * 5.12),
+    static_cast<int>(7600 * 5.12),
+    static_cast<int>(2287 * 2.56),
+    static_cast<int>(3312 * 5.12)
+  };
+
   std::string serial_device_;
   int serial_baudrate_;
   std::string firmware_version_;

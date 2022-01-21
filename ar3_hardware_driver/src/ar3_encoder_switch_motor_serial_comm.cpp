@@ -4,7 +4,10 @@
 #include <chrono>
 #include <iostream>
 
+#include <boost/tokenizer.hpp>
+
 #define FW_VERSION "0.0.1"
+
 
 namespace ar3_hardware_driver {
 
@@ -23,6 +26,7 @@ bool AR3EncoderSwitchMotorSerialComm::init(const std::string& device, int baudra
 
     serial_->setTimeout(boost::posix_time::seconds(1)); // TODO: timeout config
     serial_->writeString("FV\r\n");
+    // TODO: try/catch
     if (fw_version != serial_->readStringUntil("\r\n")) {
       return false;
     }
@@ -32,6 +36,18 @@ bool AR3EncoderSwitchMotorSerialComm::init(const std::string& device, int baudra
     std::cout <<"Error: " << e.what() << std::endl;
     return false;
   }
+
+  encoder_steps_per_rad_ = {
+    {
+      to_radians(227.5555555555556),
+      to_radians(284.4444444444444),
+      to_radians(284.4444444444444),
+      to_radians(223.0044444444444),
+      to_radians(56.04224675948152),
+      to_radians(108.0888888888889)
+    }
+  };
+
   return true;
 }
 
@@ -48,8 +64,36 @@ void AR3EncoderSwitchMotorSerialComm::calibrate_joints()
 {
 }
 
-void AR3EncoderSwitchMotorSerialComm::get_joint_positions(std::vector<double>& joint_positions)
+void AR3EncoderSwitchMotorSerialComm::get_joint_encoder_counts(std::vector<int>& encoder_counts)
 {
+  // Request the joint encoder counts
+  serial_->writeString("EC\r\n");
+  std::string jp_result;
+  try {
+    jp_result = serial_->readStringUntil("\r\n");
+  } catch (timeout_exception e) {
+    std::cout << "Timeout!" << std::endl;
+  } catch (boost::system::system_error e) {
+    std::cout << "Exception: " << e.what() << std::endl;
+  }
+
+  typedef boost::tokenizer<boost::char_separator<char>> tokenizer;
+  boost::char_separator<char> sep{","};
+  tokenizer tok {jp_result, sep};
+
+  std::vector<std::string> tokens;
+  tokens.reserve(encoder_counts.size());
+  for (const auto &t : tok) {
+    tokens.push_back(t);
+  }
+
+  if (tokens.size() == encoder_counts.size()) {
+    for (unsigned int i = 0; i < encoder_counts.size(); ++i) {
+      encoder_counts[i] = std::stoi(tokens[i]);
+    }
+  } else {
+    std::cout << "Error parsing joint positions" << std::endl;
+  }
 }
 
 

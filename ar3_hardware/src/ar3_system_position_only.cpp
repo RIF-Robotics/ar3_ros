@@ -39,6 +39,7 @@ CallbackReturn AR3SystemPositionOnlyHardware::on_init(
 
   hw_states_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
   hw_commands_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
+  joint_encoder_counts_.resize(info_.joints.size(), std::numeric_limits<int>::quiet_NaN());
 
   for (const hardware_interface::ComponentInfo & joint : info_.joints)
   {
@@ -86,10 +87,6 @@ CallbackReturn AR3SystemPositionOnlyHardware::on_init(
 CallbackReturn AR3SystemPositionOnlyHardware::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  //std::vector<double> enc_steps_per_deg =
-  //    {227.5555555555556, 284.4444444444444, 284.4444444444444,
-  //     223.0044444444444, 56.04224675948152, 108.0888888888889};
-
   if (not comm_.init(serial_device_, serial_baudrate_, firmware_version_))
   {
     RCLCPP_ERROR(rclcpp::get_logger("AR3SystemPositionOnlyHardware"),
@@ -153,28 +150,18 @@ CallbackReturn AR3SystemPositionOnlyHardware::on_deactivate(
 
 hardware_interface::return_type AR3SystemPositionOnlyHardware::read()
 {
-  // START: This part here is for exemplary purposes - Please do not copy to your production code
-  RCLCPP_INFO(rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Reading...");
+  // Read the encoder counts
+  comm_.get_joint_encoder_counts(joint_encoder_counts_);
 
-  //for (uint i = 0; i < hw_states_.size(); i++)
-  //{
-  //  // Simulate AR3's movement
-  //  hw_states_[i] = hw_states_[i] + (hw_commands_[i] - hw_states_[i]) / hw_slowdown_;
-  //  RCLCPP_INFO(
-  //    rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Got state %.5f for joint %d!",
-  //    hw_states_[i], i);
-  //}
-  //RCLCPP_INFO(rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Joints successfully read!");
-  // END: This part here is for exemplary purposes - Please do not copy to your production code
-
+  // Convert the encoder counts to joint positions
+  for (unsigned int i = 0; i < joint_encoder_counts_.size(); ++i) {
+    hw_states_[i] = encoder_directions_[i] * (joint_encoder_counts_[i] - encoder_zero_positions_[i]) / counts_per_revolution_ / gear_ratios_[i] * 2.0 * M_PI;
+  }
   return hardware_interface::return_type::OK;
 }
 
 hardware_interface::return_type AR3SystemPositionOnlyHardware::write()
 {
-  // START: This part here is for exemplary purposes - Please do not copy to your production code
-  RCLCPP_INFO(rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Writing...");
-
   //for (uint i = 0; i < hw_commands_.size(); i++)
   //{
   //  // Simulate sending commands to the hardware

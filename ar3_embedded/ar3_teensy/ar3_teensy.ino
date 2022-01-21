@@ -68,8 +68,11 @@ int J3startSteps = 0;
 int J4startSteps = 7600;
 int J5startSteps = 2287;
 int J6startSteps = 3312;
+const int start_steps[] = {J1startSteps, J2startSteps, J3startSteps, J4startSteps, J5startSteps, J6startSteps};
 
 
+// #define ENCODER_OPTIMIZE_INTERRUPTS # TODO, try this out later
+// https://www.pjrc.com/teensy/td_libs_Encoder.html
 #include <Encoder.h>
 #include <avr/pgmspace.h>
 
@@ -104,10 +107,10 @@ Encoder J4encPos(20, 21);
 Encoder J5encPos(22, 23);
 Encoder J6encPos(24, 25);
 Encoder* encoders[] = {&J1encPos, &J2encPos, &J3encPos, &J4encPos, &J5encPos, &J6encPos};
-int current_encoder_positions[NUM_JOINTS];
+int current_encoder_counts[NUM_JOINTS];
 
 // +1 if encoder direction matches motor direction
-int encoder_dir[] = { 1, 1, 1, 1, 1, 1 };
+//int encoder_dir[] = { 1, 1, 1, 1, 1, 1 };
 
 
 //set calibration limit switch pins
@@ -128,12 +131,21 @@ const float J4encMult = 5.12;
 const float J5encMult = 2.56;
 const float J6encMult = 5.12;
 const float EncDiv = .1;
+const float encoder_mults[] = {J1encMult, J2encMult, J3encMult, J4encMult, J5encMult, J6encMult};
 
 
-void read_encoder_positions(int* encoder_positions)
+void read_encoder_counts(int* encoder_positions)
 {
   for (unsigned int i = 0; i < NUM_JOINTS; ++i) {
-    encoder_positions[i] = encoders[i]->read() * encoder_dir[i];
+
+    encoder_positions[i] = encoders[i]->read();
+  }
+}
+
+void write_encoder_counts(int* encoder_positions)
+{
+  for (unsigned int i = 0; i < NUM_JOINTS; ++i) {
+    encoders[i]->write(encoder_positions[i] * encoder_mults[i]);
   }
 }
 
@@ -143,9 +155,14 @@ void array_to_message(int* array, int length, String* msg)
   for (unsigned int i = 0 ; i < length; ++i) {
     *msg += String(array[i]) + ",";
   }
-  *msg += String("\n");
 }
 
+template <typename T>
+Print& operator<<(Print& printer, T value)
+{
+    printer.print(value);
+    return printer;
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //MAIN
@@ -156,12 +173,13 @@ void setup() {
   Serial.begin(115200);
 
 
-  J1encPos.write(J1startSteps * J1encMult);
-  J2encPos.write(J2startSteps * J2encMult);
-  J3encPos.write(J3startSteps * J3encMult);
-  J4encPos.write(J4startSteps * J4encMult);
-  J5encPos.write(J5startSteps * J5encMult);
-  J6encPos.write(J6startSteps * J6encMult);
+  write_encoder_counts(start_steps);
+  //J1encPos.write(J1startSteps * J1encMult);
+  //J2encPos.write(J2startSteps * J2encMult);
+  //J3encPos.write(J3startSteps * J3encMult);
+  //J4encPos.write(J4startSteps * J4encMult);
+  //J5encPos.write(J5startSteps * J5encMult);
+  //J6encPos.write(J6startSteps * J6encMult);
 
   pinMode(TRstepPin, OUTPUT);
   pinMode(TRdirPin, OUTPUT);
@@ -244,102 +262,57 @@ void loop() {
         }
       }
 
-      // Manually read an encoder value (e.g., "ER3")
-      else if (function == "ER")
+      else if (function == "SM")
       {
-        if (inData.length() < 4)
-        {
-          Serial.println("Specify a joint ID: ER1");
-        }
-        else
-        {
-          int joint_id = inData.substring(2, 3).toInt();
-          int enc_pos = 0;
-          if (joint_id == 1) {
-            enc_pos = J1encPos.read();
-          } else if (joint_id == 2) {
-            enc_pos = J2encPos.read();
-          } else if (joint_id == 3) {
-            enc_pos = J3encPos.read();
-          } else if (joint_id == 4) {
-            enc_pos = J4encPos.read();
-          } else if (joint_id == 5) {
-            enc_pos = J5encPos.read();
-          } else if (joint_id == 6) {
-            enc_pos = J6encPos.read();
+        char* buffer = inData.c_str();
+        char* token = strtok(buffer, " ");
+        unsigned int i = 0;
+        int joint_id = 0;
+        int direction = 0;
+        int steps = 0;
+        while (token != NULL) {
+          switch(i) {
+            case 0:
+              // SM
+              break;
+            case 1:
+              joint_id = String(token).toInt();
+              break;
+            case 2:
+              direction = String(token).toInt();
+              break;
+            case 3:
+              steps = String(token).toInt();
+            default:
+              break;
           }
-
-          Serial.println("Reading encoder: ");
-          Serial.print(enc_pos);
-          Serial.println();
-
+          token = strtok(NULL, " ");
+          ++i;
         }
-      }
 
-      else if (function == "PP")
-      {
-        if (inData.length() < 4)
-        {
-          Serial.println("Specify a joint ID: PP1");
-        }
-        else
-        {
-          int joint_id = inData.substring(2, 3).toInt();
+        if (i == 4) {
+          Serial << "Stepping joint " << joint_id << " " << steps << " steps.\n";
+
           int dir_pin = dir_pins[joint_id-1];
           int step_pin = step_pins[joint_id-1];
 
-          Serial.println("Stepping pin: ");
-          Serial.print(joint_id);
+          if (direction == 0) {
+            digitalWrite(dir_pin, LOW);
+          } else {
+            digitalWrite(dir_pin, HIGH);
+          }
+          delayMicroseconds(1000);
 
-          digitalWrite(dir_pin, HIGH);
-          delayMicroseconds(100);
-
-          for (int i = 0; i < 300; i++) {
+          for (int i = 0; i < steps; i++) {
             digitalWrite(step_pin, LOW);
             delayMicroseconds(1000);
             digitalWrite(step_pin, HIGH);
             delayMicroseconds(1000);
           }
+
+        } else {
+          Serial.println("Invalid SM command.");
         }
-      }
-
-      else if (function == "PN")
-      {
-        if (inData.length() < 4)
-        {
-          Serial.println("Specify a joint ID: PN1");
-        }
-        else
-        {
-          int joint_id = inData.substring(2, 3).toInt();
-          int dir_pin = dir_pins[joint_id-1];
-          int step_pin = step_pins[joint_id-1];
-
-          Serial.println("Stepping pin: ");
-          Serial.print(joint_id);
-
-          digitalWrite(dir_pin, LOW);
-          delayMicroseconds(100);
-
-          for (int i = 0; i < 300; i++) {
-            digitalWrite(step_pin, LOW);
-            delayMicroseconds(1000);
-            digitalWrite(step_pin, HIGH);
-            delayMicroseconds(1000);
-          }
-        }
-      }
-
-      else if (function == "PL")
-      {
-        Serial.println("Step Pin Low");
-        digitalWrite(J1stepPin, LOW);
-      }
-
-      else if (function == "PH")
-      {
-        Serial.println("Step Pin High");
-        digitalWrite(J1stepPin, HIGH);
       }
 
       // Read the firmware version
@@ -348,14 +321,14 @@ void loop() {
         Serial.println(version);
       }
 
-      else if (function == "JP")
+      else if (function == "EC")
       {
-        // read current joint positions
-        read_encoder_positions(current_encoder_positions);
+        // read current encoder positions
+        read_encoder_counts(current_encoder_counts);
 
         String msg = "";
-        array_to_message(current_encoder_positions, NUM_JOINTS, &msg);
-        Serial.print(msg);
+        array_to_message(current_encoder_counts, NUM_JOINTS, &msg);
+        Serial.println(msg);
       }
 
       //-----COMMAND GET ROBOT POSITION---------------------------------------------------

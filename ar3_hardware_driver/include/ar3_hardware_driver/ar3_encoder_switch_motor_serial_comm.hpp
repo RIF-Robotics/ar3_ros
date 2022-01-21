@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <math.h>
 
 #include "ar3_hardware_driver/visibility_control.h"
 #include "ar3_hardware_driver/timeout_serial.h"
@@ -26,12 +27,21 @@ class AR3EncoderSwitchMotorSerialComm
               std::vector<double>& joint_states);
 
   AR3_HARDWARE_DRIVER_PUBLIC
-  void get_joint_positions(std::vector<double>& joint_positions);
+  void get_joint_encoder_counts(std::vector<int>& joint_encoder_counts);
 
   AR3_HARDWARE_DRIVER_PUBLIC
   void calibrate_joints();
 
  private:
+
+  static inline double to_degrees(double radians) {
+    return radians * (180.0 / M_PI);
+  }
+
+  static inline double to_radians(double degrees) {
+    return degrees * (M_PI / 180.0);
+  }
+
   std::shared_ptr<TimeoutSerial> serial_;
 
 
@@ -39,7 +49,7 @@ class AR3EncoderSwitchMotorSerialComm
   int num_joints_;
   std::vector<int> enc_commands_;
   std::vector<int> enc_steps_;
-  std::vector<double> enc_steps_per_deg_;
+  std::vector<double> encoder_steps_per_rad_;
   std::vector<int> enc_calibrations_;
 
 
