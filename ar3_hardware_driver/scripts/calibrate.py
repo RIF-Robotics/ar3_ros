@@ -6,12 +6,12 @@ import io
 EOL = b'\r\n'
 
 joint_info = {
-    1: {'letter': b'A', 'cal_dir': 0, 'neg_ang_lim': -170.0 , 'pos_ang_lim': 170.0 , 'step_lim': 15110, 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': int(15110/2.)},
-    2: {'letter': b'B', 'cal_dir': 0, 'neg_ang_lim': -129.6 , 'pos_ang_lim': 0.0   , 'step_lim': 7198 , 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 0},
-    3: {'letter': b'C', 'cal_dir': 1, 'neg_ang_lim': +1.0   , 'pos_ang_lim': 143.7 , 'step_lim': 7984 , 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 0},
-    4: {'letter': b'D', 'cal_dir': 0, 'neg_ang_lim': -164.5 , 'pos_ang_lim': 164.5 , 'step_lim': 14056, 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 0},
-    5: {'letter': b'E', 'cal_dir': 0, 'neg_ang_lim': -104.15, 'pos_ang_lim': 104.15, 'step_lim': 4560 , 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 0},
-    6: {'letter': b'F', 'cal_dir': 1, 'neg_ang_lim': -148.1 , 'pos_ang_lim': 148.1 , 'step_lim': 6320 , 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 0}
+    1: {'letter': b'A', 'cal_dir': 0, 'neg_ang_lim': -170.0 , 'pos_ang_lim': 170.0 , 'step_lim': 15110, 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 7600},
+    2: {'letter': b'B', 'cal_dir': 0, 'neg_ang_lim': -129.6 , 'pos_ang_lim': 0.0   , 'step_lim': 7198 , 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 2139},
+    3: {'letter': b'C', 'cal_dir': 1, 'neg_ang_lim': +1.0   , 'pos_ang_lim': 143.7 , 'step_lim': 7984 , 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 7895},
+    4: {'letter': b'D', 'cal_dir': 0, 'neg_ang_lim': -164.5 , 'pos_ang_lim': 164.5 , 'step_lim': 14056, 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 7049},
+    5: {'letter': b'E', 'cal_dir': 0, 'neg_ang_lim': -104.15, 'pos_ang_lim': 104.15, 'step_lim': 4560 , 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 887},
+    6: {'letter': b'F', 'cal_dir': 1, 'neg_ang_lim': -148.1 , 'pos_ang_lim': 148.1 , 'step_lim': 6320 , 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 3062}
 }
 
 def parse_response(response):
@@ -95,8 +95,9 @@ def calibrate():
     ser.timeout = 60
 
     # 1. Command the motors to hit the limit switches
-    active_joints = [1]
-    cmd = get_drive_to_limit_cmd(active_joints, 15)
+    active_joints = [1,2,3,4,5,6]
+    #active_joints = [6]
+    cmd = get_drive_to_limit_cmd(active_joints, 20)
     ser.write(cmd)
 
     # The LL command only uses \r for EOL
@@ -145,9 +146,7 @@ def calibrate():
     # 6. Go to rest position
     print('Moving to rest position.')
     ser.timeout = 20
-    cmd = get_rest_position_cmd(active_joints)
-    print(cmd)
-    ser.write(cmd)
+    ser.write(get_rest_position_cmd(active_joints))
     result = parse_response(ser.readline())
     print('MJ response: ', result)
 
