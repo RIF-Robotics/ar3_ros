@@ -13,7 +13,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry>
-          <mesh filename="package://ar3_description/meshes/base_link.STL" />
+          <mesh filename="package://ar3_description/meshes/base_link.stl" />
         </geometry>
         <material name="orange"/>
       </visual>
@@ -21,7 +21,7 @@
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry>
-          <mesh filename="package://ar3_description/meshes/base_link.STL" />
+          <mesh filename="package://ar3_description/meshes/base_link.stl" />
         </geometry>
       </collision>
 
@@ -34,18 +34,21 @@
     </link>
 
     <joint name="${prefix}joint1" type="revolute">
-      <origin xyz="0 0 0.003445" rpy="${pi} 0 0" />
+      <!-- <origin xyz="0 0 0.003445" rpy="${pi} 0 0" /> -->
+      <!-- <origin xyz="0 0 0" rpy="0 0 0" /> -->
+      <origin xyz="0 0 0.003445" rpy="0 0 0" />
       <parent link="${prefix}base_link" />
       <child link="${prefix}link1" />
       <axis xyz="0 0 1" />
-      <limit lower="-2.96706" upper="2.96706" effort="0" velocity="0"/>
+      <!-- <limit lower="-2.96706" upper="2.96706" effort="0" velocity="0"/> -->
+      <limit lower="${-170.0 * pi/180.0}" upper="${170.0 * pi/180.0}" effort="0" velocity="0"/>
     </joint>
 
     <link name="${prefix}link1">
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry>
-          <mesh filename="package://ar3_description/meshes/link_1.STL" />
+          <mesh filename="package://ar3_description/meshes/link_1.stl" />
         </geometry>
         <material name="blue"/>
       </visual>
@@ -53,7 +56,7 @@
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry>
-          <mesh filename="package://ar3_description/meshes/link_1.STL" />
+          <mesh filename="package://ar3_description/meshes/link_1.stl" />
         </geometry>
       </collision>
 
@@ -66,18 +69,19 @@
     </link>
 
     <joint name="${prefix}joint2" type="revolute">
-      <origin xyz="0 0.064146 -0.16608" rpy="${pi / 2.0} 0.5236 -${pi / 2.0}" />
+      <!-- <origin xyz="0 0.064146 -0.16608" rpy="${pi / 2.0} 0.5236 -${pi / 2.0}" /> -->
+      <origin xyz="0.064146 0 0.16608" rpy="${-pi/2.0} 0 0" />
       <parent link="${prefix}link1" />
       <child link="${prefix}link2" />
       <axis xyz="0 0 1" />
-      <limit lower="${-39.6 / 180.0 * pi}" upper="${pi / 2.0}" effort="0" velocity="0"/>
+      <limit lower="${-129.6 * pi/180.0}" upper="0" effort="0" velocity="0"/>
     </joint>
 
     <link name="${prefix}link2">
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry>
-          <mesh filename="package://ar3_description/meshes/link_2.STL" />
+          <mesh filename="package://ar3_description/meshes/link_2.stl" />
         </geometry>
         <material name="green"/>
       </visual>
@@ -85,7 +89,7 @@
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry>
-          <mesh filename="package://ar3_description/meshes/link_2.STL" />
+          <mesh filename="package://ar3_description/meshes/link_2.stl" />
         </geometry>
       </collision>
 
@@ -98,18 +102,20 @@
     </link>
 
     <joint name="${prefix}joint3" type="revolute">
-      <origin xyz="0.1525 -0.26414 0" rpy="0 0 -2.618" />  <!-- TODO: -1.04720367321 instead of -2.618 -->
+      <!-- <origin xyz="0.1525 -0.26414 0" rpy="0 0 -2.618" />  <!-\- TODO -1.04720367321 instead of -2.618 -\-> -->
+      <origin xyz="0.3050019501576998 0 0" rpy="0 0 0" />
       <parent link="${prefix}link2" />
       <child link="${prefix}link3" />
-      <axis xyz="0 0 -1" />
-      <limit lower="0.0174533" upper="2.5080381" effort="0" velocity="0"/>
+      <axis xyz="0 0 1" />
+      <!-- <limit lower="0.0174533" upper="2.5080381" effort="0" velocity="0"/> -->
+      <limit lower="${1.0 * pi/180.0}" upper="${143.7 * pi/180.0}" effort="0" velocity="0"/>
     </joint>
 
     <link name="${prefix}link3">
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry>
-          <mesh filename="package://ar3_description/meshes/link_3.STL" />
+          <mesh filename="package://ar3_description/meshes/link_3.stl" />
         </geometry>
         <material name="red"/>
       </visual>
@@ -117,7 +123,7 @@
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry>
-          <mesh filename="package://ar3_description/meshes/link_3.STL" />
+          <mesh filename="package://ar3_description/meshes/link_3.stl" />
         </geometry>
       </collision>
 
@@ -129,19 +135,21 @@
       </inertial>
     </link>
 
-    <joint name="${prefix}joint4" type="revolute">
-      <origin xyz="0 0 0.00675" rpy="${pi / 2.0} -1.2554 -${pi / 2.0}"/>
+    <joint name="${prefix}joint4" type="continuous">
+      <!-- <origin xyz="0 0 0.00675" rpy="${pi / 2.0} -1.2554 -${pi / 2.0}"/> -->
+      <origin xyz="0 0 0.00675" rpy="0 ${pi/2.0} 0"/>
       <parent link="${prefix}link3" />
       <child link="${prefix}link4" />
-      <axis xyz="0 0 -1" />
-      <limit lower="-2.8710666" upper="2.8710666" effort="0" velocity="0"/>
+      <axis xyz="0 0 1" />
+      <!-- <limit lower="-2.8710666" upper="2.8710666" effort="0" velocity="0"/> -->
+      <limit lower="${-164.5 * pi/180.0}" upper="${164.5 * pi/180.0}" effort="0" velocity="0"/>
     </joint>
 
     <link name="${prefix}link4">
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry>
-          <mesh filename="package://ar3_description/meshes/link_4.STL" />
+          <mesh filename="package://ar3_description/meshes/link_4.stl" />
         </geometry>
         <material name="blue"/>
       </visual>
@@ -149,7 +157,7 @@
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry>
-          <mesh filename="package://ar3_description/meshes/link_4.STL" />
+          <mesh filename="package://ar3_description/meshes/link_4.stl" />
         </geometry>
       </collision>
 
@@ -162,18 +170,19 @@
     </link>
 
     <joint name="${prefix}joint5" type="revolute">
-      <origin xyz="0 0 -0.22225" rpy="${pi} 0 -2.8262" />
+      <!-- <origin xyz="0 0 -0.22225" rpy="${pi} 0 -2.8262" /> -->
+      <origin xyz="0 0 0.22225" rpy="0 ${-pi/2.0} 0" />
       <parent link="${prefix}link4" />
       <child link="${prefix}link5" />
-      <axis xyz="1 0 0" />
-      <limit lower="-1.81776042" upper="1.81776042" effort="0" velocity="0"/>
+      <axis xyz="0 0 1" />
+      <limit lower="${-104.15 * pi/180.0}" upper="${104.15 * pi/180.0}" effort="0" velocity="0"/>
     </joint>
 
     <link name="${prefix}link5">
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry>
-          <mesh filename="package://ar3_description/meshes/link_5.STL" />
+          <mesh filename="package://ar3_description/meshes/link_5.stl" />
         </geometry>
         <material name="green"/>
       </visual>
@@ -181,7 +190,7 @@
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry>
-          <mesh filename="package://ar3_description/meshes/link_5.STL" />
+          <mesh filename="package://ar3_description/meshes/link_5.stl" />
         </geometry>
       </collision>
 
@@ -194,18 +203,20 @@
     </link>
 
     <joint name="${prefix}joint6" type="revolute">
-      <origin xyz="-0.000294 0 0.02117" rpy="0 0 ${pi}" />
+      <!-- <origin xyz="-0.000294 0 0.02117" rpy="0 0 ${pi}" /> -->
+      <origin xyz="0.02117 0 0 " rpy="0 ${pi/2.0} 0" />
       <parent link="${prefix}link5" />
       <child link="${prefix}link6" />
       <axis xyz="0 0 1" />
-      <limit lower="-2.5848326" upper="2.5848326" effort="0" velocity="0"/>
+      <!-- <limit lower="-2.5848326" upper="2.5848326" effort="0" velocity="0"/> -->
+      <limit lower="${-148.1 * pi/180.0}" upper="${148.1 * pi/180.0}" effort="0" velocity="0"/>
     </joint>
 
     <link name="${prefix}link6">
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry>
-          <mesh filename="package://ar3_description/meshes/link_6.STL" />
+          <mesh filename="package://ar3_description/meshes/link_6.stl" />
         </geometry>
         <material name="orange"/>
       </visual>
@@ -213,7 +224,7 @@
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry>
-          <mesh filename="package://ar3_description/meshes/link_6.STL" />
+          <mesh filename="package://ar3_description/meshes/link_6.stl" />
         </geometry>
       </collision>
 
