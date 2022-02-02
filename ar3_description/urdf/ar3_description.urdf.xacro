@@ -24,16 +24,24 @@
           <mesh filename="package://ar3_description/meshes/base_link.STL" />
         </geometry>
       </collision>
+
+      <inertial>
+        <origin rpy="0 0 0" xyz="-4.6941E-06 0.054174 0.038824"/>
+        <mass value="0.7102"/>
+        <inertia ixx="0.0039943" ixy="3.697E-07" ixz="-5.7364E-08"
+                 iyy="0.0014946" iyz="-0.00036051" izz="0.0042554"/>
+      </inertial>
     </link>
 
-    <link name="${prefix}link1">
-      <inertial>
-        <origin xyz="-0.022706 0.04294 -0.12205" rpy="0 0 0" />
-        <mass value="0.88065" />
-        <inertia ixx="0.0034" ixy="0.00042296" ixz="-0.00089231"
-                 iyy="0.0041778" iyz="0.0010848" izz="0.0027077" />
-      </inertial>
+    <joint name="${prefix}joint1" type="revolute">
+      <origin xyz="0 0 0.003445" rpy="${pi} 0 0" />
+      <parent link="${prefix}base_link" />
+      <child link="${prefix}link1" />
+      <axis xyz="0 0 1" />
+      <limit lower="-2.96706" upper="2.96706" effort="0" velocity="0"/>
+    </joint>
 
+    <link name="${prefix}link1">
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry>
@@ -48,23 +56,24 @@
           <mesh filename="package://ar3_description/meshes/link_1.STL" />
         </geometry>
       </collision>
+
+      <inertial>
+        <origin xyz="-0.022706 0.04294 -0.12205" rpy="0 0 0" />
+        <mass value="0.88065" />
+        <inertia ixx="0.0034" ixy="0.00042296" ixz="-0.00089231"
+                 iyy="0.0041778" iyz="0.0010848" izz="0.0027077" />
+      </inertial>
     </link>
 
-    <joint name="${prefix}joint1" type="continuous">
-      <origin xyz="0 0 0.003445" rpy="3.1416 -1.0248E-21 -1.6736E-05" />
-      <parent link="${prefix}base_link" />
-      <child link="${prefix}link1" />
+    <joint name="${prefix}joint2" type="revolute">
+      <origin xyz="0 0.064146 -0.16608" rpy="${pi / 2.0} 0.5236 -${pi / 2.0}" />
+      <parent link="${prefix}link1" />
+      <child link="${prefix}link2" />
       <axis xyz="0 0 1" />
+      <limit lower="${-39.6 / 180.0 * pi}" upper="${pi / 2.0}" effort="0" velocity="0"/>
     </joint>
 
     <link name="${prefix}link2">
-      <inertial>
-        <origin xyz="0.064818 -0.11189 -0.038671" rpy="0 0 0" />
-        <mass value="0.57738" />
-        <inertia ixx="0.0047312" ixy="0.0022624" ixz="0.00032144"
-                 iyy="0.0020836" iyz="-0.00056569" izz="0.0056129" />
-      </inertial>
-
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry>
@@ -79,23 +88,24 @@
           <mesh filename="package://ar3_description/meshes/link_2.STL" />
         </geometry>
       </collision>
+
+      <inertial>
+        <origin xyz="0.064818 -0.11189 -0.038671" rpy="0 0 0" />
+        <mass value="0.57738" />
+        <inertia ixx="0.0047312" ixy="0.0022624" ixz="0.00032144"
+                 iyy="0.0020836" iyz="-0.00056569" izz="0.0056129" />
+      </inertial>
     </link>
 
-    <joint name="${prefix}joint2" type="continuous">
-      <origin xyz="0 0.064146 -0.16608" rpy="1.5708 0.5236 -1.5708" />
-      <parent link="${prefix}link1" />
-      <child link="${prefix}link2" />
-      <axis xyz="0 0 1" />
+    <joint name="${prefix}joint3" type="revolute">
+      <origin xyz="0.1525 -0.26414 0" rpy="0 0 -2.618" />  <!-- TODO: -1.04720367321 instead of -2.618 -->
+      <parent link="${prefix}link2" />
+      <child link="${prefix}link3" />
+      <axis xyz="0 0 -1" />
+      <limit lower="0.0174533" upper="2.5080381" effort="0" velocity="0"/>
     </joint>
 
     <link name="${prefix}link3">
-      <inertial>
-        <origin xyz="-0.00029765 -0.023661 -0.0019125" rpy="0 0 0" />
-        <mass value="0.1787" />
-        <inertia ixx="0.0001685" ixy="-2.7713E-05" ixz="5.6885E-06"
-                 iyy="0.00012865" iyz="2.9256E-05" izz="0.00020744" />
-      </inertial>
-
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry>
@@ -110,23 +120,24 @@
           <mesh filename="package://ar3_description/meshes/link_3.STL" />
         </geometry>
       </collision>
+
+      <inertial>
+        <origin xyz="-0.00029765 -0.023661 -0.0019125" rpy="0 0 0" />
+        <mass value="0.1787" />
+        <inertia ixx="0.0001685" ixy="-2.7713E-05" ixz="5.6885E-06"
+                 iyy="0.00012865" iyz="2.9256E-05" izz="0.00020744" />
+      </inertial>
     </link>
 
-    <joint name="${prefix}joint3" type="continuous">
-      <origin xyz="0.1525 -0.26414 0" rpy="3.3431E-16 -1.4164E-16 -2.618" />
-      <parent link="${prefix}link2" />
-      <child link="${prefix}link3" />
+    <joint name="${prefix}joint4" type="revolute">
+      <origin xyz="0 0 0.00675" rpy="${pi / 2.0} -1.2554 -${pi / 2.0}"/>
+      <parent link="${prefix}link3" />
+      <child link="${prefix}link4" />
       <axis xyz="0 0 -1" />
+      <limit lower="-2.8710666" upper="2.8710666" effort="0" velocity="0"/>
     </joint>
 
     <link name="${prefix}link4">
-      <inertial>
-        <origin xyz="-0.0016798 -0.00057319 -0.074404" rpy="0 0 0" />
-        <mass value="0.34936" />
-        <inertia ixx="0.0030532" ixy="-1.8615E-05" ixz="-7.0047E-05"
-                 iyy="0.0031033" iyz="-2.3301E-05" izz="0.00022264" />
-      </inertial>
-
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry>
@@ -141,23 +152,24 @@
           <mesh filename="package://ar3_description/meshes/link_4.STL" />
         </geometry>
       </collision>
+
+      <inertial>
+        <origin xyz="-0.0016798 -0.00057319 -0.074404" rpy="0 0 0" />
+        <mass value="0.34936" />
+        <inertia ixx="0.0030532" ixy="-1.8615E-05" ixz="-7.0047E-05"
+                 iyy="0.0031033" iyz="-2.3301E-05" izz="0.00022264" />
+      </inertial>
     </link>
 
-    <joint name="${prefix}joint4" type="continuous">
-      <origin xyz="0 0 0.00675" rpy="1.5708 -1.2554 -1.5708" />
-      <parent link="${prefix}link3" />
-      <child link="${prefix}link4" />
-      <axis xyz="0 0 -1" />
+    <joint name="${prefix}joint5" type="revolute">
+      <origin xyz="0 0 -0.22225" rpy="${pi} 0 -2.8262" />
+      <parent link="${prefix}link4" />
+      <child link="${prefix}link5" />
+      <axis xyz="1 0 0" />
+      <limit lower="-1.81776042" upper="1.81776042" effort="0" velocity="0"/>
     </joint>
 
     <link name="${prefix}link5">
-      <inertial>
-        <origin xyz="0.0015066 -1.3102E-05 -0.012585" rpy="0 0 0" />
-        <mass value="0.11562" />
-        <inertia ixx="5.5035E-05" ixy="-1.019E-08" ixz="-2.6243E-06"
-                 iyy="8.2921E-05" iyz="1.4437E-08" izz="5.2518E-05" />
-      </inertial>
-
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry>
@@ -172,23 +184,24 @@
           <mesh filename="package://ar3_description/meshes/link_5.STL" />
         </geometry>
       </collision>
+
+      <inertial>
+        <origin xyz="0.0015066 -1.3102E-05 -0.012585" rpy="0 0 0" />
+        <mass value="0.11562" />
+        <inertia ixx="5.5035E-05" ixy="-1.019E-08" ixz="-2.6243E-06"
+                 iyy="8.2921E-05" iyz="1.4437E-08" izz="5.2518E-05" />
+      </inertial>
     </link>
 
-    <joint name="${prefix}joint5" type="continuous">
-      <origin xyz="0 0 -0.22225" rpy="3.1416 0 -2.8262" />
-      <parent link="${prefix}link4" />
-      <child link="${prefix}link5" />
-      <axis xyz="-1 0 0" />
+    <joint name="${prefix}joint6" type="revolute">
+      <origin xyz="-0.000294 0 0.02117" rpy="0 0 ${pi}" />
+      <parent link="${prefix}link5" />
+      <child link="${prefix}link6" />
+      <axis xyz="0 0 1" />
+      <limit lower="-2.5848326" upper="2.5848326" effort="0" velocity="0"/>
     </joint>
 
     <link name="${prefix}link6">
-      <inertial>
-        <origin xyz="2.9287E-10 -1.6472E-09 0.0091432" rpy="0 0 0" />
-        <mass value="0.013863" />
-        <inertia ixx="1.3596E-06" ixy="3.0585E-13" ixz="5.7102E-14"
-                 iyy="1.7157E-06" iyz="6.3369E-09" izz="2.4332E-06" />
-      </inertial>
-
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry>
@@ -203,14 +216,14 @@
           <mesh filename="package://ar3_description/meshes/link_6.STL" />
         </geometry>
       </collision>
-    </link>
 
-    <joint name="${prefix}joint6" type="continuous">
-      <origin xyz="-0.000294 0 0.02117" rpy="0 0 3.1416" />
-      <parent link="${prefix}link5" />
-      <child link="${prefix}link6" />
-      <axis xyz="0 0 -1" />
-    </joint>
+      <inertial>
+        <origin xyz="2.9287E-10 -1.6472E-09 0.0091432" rpy="0 0 0" />
+        <mass value="0.013863" />
+        <inertia ixx="1.3596E-06" ixy="3.0585E-13" ixz="5.7102E-14"
+                 iyy="1.7157E-06" iyz="6.3369E-09" izz="2.4332E-06" />
+      </inertial>
+    </link>
 
   </xacro:macro>
 
