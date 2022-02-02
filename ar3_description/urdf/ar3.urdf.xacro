@@ -3,9 +3,15 @@
 <robot xmlns:xacro="http://ros.org/wiki/xacro" name="ar3_robot">
   <xacro:arg name="prefix" default="" />
 
+  <!-- Serial hardware arguments -->
   <xacro:arg name="serial_device" default="" />
   <xacro:arg name="serial_baudrate" default="" />
   <xacro:arg name="firmware_version" default="" />
+
+  <!-- Simulation arguments -->
+  <xacro:arg name="use_sim" default="false" />
+  <xacro:arg name="use_fake_hardware" default="false"/>
+  <xacro:arg name="fake_sensor_commands" default="false"/>
 
   <!-- include AR3 macro -->
   <xacro:include filename="$(find ar3_description)/urdf/ar3_description.urdf.xacro" />
@@ -14,7 +20,8 @@
   <xacro:include filename="$(find ar3_description)/gazebo/ar3.materials.xacro" />
 
   <!-- include AR3 ros2_control description -->
-  <xacro:include filename="$(find ar3_description)/ros2_control/ar3.ros2_control.xacro" />
+  <!-- <xacro:include filename="$(find ar3_description)/ros2_control/ar3.ros2_control.xacro" /> -->
+  <xacro:include filename="$(find ar3_description)/ros2_control/ar3_system_position_only.ros2_control.xacro" />
 
   <!-- Used for fixing robot -->
   <link name="world"/>
@@ -28,7 +35,17 @@
     <origin xyz="0 0 0" rpy="0 0 0" />
   </xacro:ar3>
 
-  <xacro:ar3_ros2_control
-      name="ar3" prefix="$(arg prefix)" serial_device="$(arg serial_device)" serial_baudrate="$(arg serial_baudrate)" firmware_version="$(arg firmware_version)"/>
+  <!-- <xacro:ar3_ros2_control -->
+  <!--     name="ar3" prefix="$(arg prefix)" serial_device="$(arg serial_device)" serial_baudrate="$(arg serial_baudrate)" firmware_version="$(arg firmware_version)"/> -->
+  <xacro:ar3_system_position_only
+      name="ar3"
+      prefix="$(arg prefix)"
+      serial_device="$(arg serial_device)"
+      serial_baudrate="$(arg serial_baudrate)"
+      firmware_version="$(arg firmware_version)"
+      use_sim="$(arg use_sim)"
+      use_fake_hardware="$(arg use_fake_hardware)"
+      fake_sensor_commands="$(arg fake_sensor_commands)"
+      />
 
 </robot>

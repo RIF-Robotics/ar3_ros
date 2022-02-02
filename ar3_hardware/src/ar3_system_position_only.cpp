@@ -155,20 +155,20 @@ hardware_interface::return_type AR3SystemPositionOnlyHardware::read()
 
   // Convert the encoder counts to joint positions
   for (unsigned int i = 0; i < joint_encoder_counts_.size(); ++i) {
-    hw_states_[i] = encoder_directions_[i] * (joint_encoder_counts_[i] - encoder_zero_positions_[i]) / counts_per_revolution_ / gear_ratios_[i] * 2.0 * M_PI;
+    hw_states_[i] = (joint_info_[i].neg_ang_lim + joint_info_[i].calibration_dir*joint_encoder_counts_[i] / joint_info_[i].encoder_steps_per_deg) * M_PI / 180.0;
   }
   return hardware_interface::return_type::OK;
 }
 
 hardware_interface::return_type AR3SystemPositionOnlyHardware::write()
 {
-  //for (uint i = 0; i < hw_commands_.size(); i++)
-  //{
-  //  // Simulate sending commands to the hardware
-  //  RCLCPP_INFO(
-  //    rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Got command %.5f for joint %d!",
-  //    hw_commands_[i], i);
-  //}
+  for (uint i = 0; i < hw_commands_.size(); i++)
+  {
+    // Simulate sending commands to the hardware
+    RCLCPP_INFO(
+      rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Got command %.5f for joint %d!",
+      hw_commands_[i], i);
+  }
   //RCLCPP_INFO(
   //  rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Joints successfully written!");
   //// END: This part here is for exemplary purposes - Please do not copy to your production code
