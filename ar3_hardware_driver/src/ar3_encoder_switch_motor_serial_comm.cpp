@@ -96,6 +96,68 @@ void AR3EncoderSwitchMotorSerialComm::get_joint_encoder_counts(std::vector<int>&
   }
 }
 
+void AR3EncoderSwitchMotorSerialComm::step_joints(std::vector<int>& directions,
+                                                  std::vector<int>& steps)
+{
+  std::string cmd = "MJ";
+  for (unsigned int i = 0; i < steps.size(); ++i) {
+    cmd += joint_comm_info_[i].letter + std::to_string(directions[i]) + std::to_string(steps[i]);
+  }
+  cmd += "S15G15H10I20K5\r\n";
+
+  serial_->writeString(cmd);
+  std::cout << "Command: " << cmd << std::endl;
+  std::string jp_result;
+  try {
+    jp_result = serial_->readStringUntil("\r\n");
+    std::cout << "Result: " << jp_result << std::endl;
+  } catch (timeout_exception e) {
+    std::cout << "Timeout!" << std::endl;
+  } catch (boost::system::system_error e) {
+    std::cout << "Exception: " << e.what() << std::endl;
+  }
+}
+
+//void AR3EncoderSwitchMotorSerialComm::set_joint_positions(std::vector<double>& current_joint_positions,
+//                                                          std::vector<double>& desired_joint_positions)
+//{
+//  std::string cmd = "MJ";
+//  for (unsigned int i = 0; i < current_joint_positions.size(); ++i) {
+//    int steps = 0;
+//
+//    if (i == 0) {
+//      std::cout << "Current joint position: " << current_joint_positions[i] << std::endl;
+//      std::cout << "Desired joint position: " << desired_joint_positions[i] << std::endl;
+//      double joint_error = desired_joint_positions[i] - current_joint_positions[i];
+//      std::cout << "Joint error: " << joint_error << std::endl;
+//
+//      std::string dir = "1";
+//      if (joint_error < 0) {
+//        dir = "0";
+//      }
+//
+//      steps = 5;
+//
+//      cmd += joint_comm_info_[i].letter + dir + std::to_string(steps);
+//    } else {
+//      cmd += joint_comm_info_[i].letter + std::to_string(not(joint_comm_info_[i].cal_dir)) + std::to_string(0);
+//    }
+//  }
+//  cmd += "S15G15H10I20K5\r\n";
+//
+//  serial_->writeString(cmd);
+//  std::cout << "Command: " << cmd << std::endl;
+//  std::string jp_result;
+//  try {
+//    jp_result = serial_->readStringUntil("\r\n");
+//    std::cout << "Result: " << jp_result << std::endl;
+//  } catch (timeout_exception e) {
+//    std::cout << "Timeout!" << std::endl;
+//  } catch (boost::system::system_error e) {
+//    std::cout << "Exception: " << e.what() << std::endl;
+//  }
+//}
+
 
 // Send msg to board and collect data
 void AR3EncoderSwitchMotorSerialComm::exchange(std::string outMsg)

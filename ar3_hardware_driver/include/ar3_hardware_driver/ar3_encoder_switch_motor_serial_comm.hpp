@@ -29,6 +29,13 @@ class AR3EncoderSwitchMotorSerialComm
   AR3_HARDWARE_DRIVER_PUBLIC
   void get_joint_encoder_counts(std::vector<int>& joint_encoder_counts);
 
+  //AR3_HARDWARE_DRIVER_PUBLIC
+  //void set_joint_positions(std::vector<double>& current_joint_positions,
+  //                         std::vector<double>& desired_joint_positions);
+  AR3_HARDWARE_DRIVER_PUBLIC
+  void step_joints(std::vector<int>& directions,
+                   std::vector<int>& steps);
+
   AR3_HARDWARE_DRIVER_PUBLIC
   void calibrate_joints();
 
@@ -52,6 +59,22 @@ class AR3EncoderSwitchMotorSerialComm
   std::vector<double> encoder_steps_per_rad_;
   std::vector<int> enc_calibrations_;
 
+  class JointCommInfo {
+   public:
+    JointCommInfo(const std::string& _letter, int _cal_dir)
+        : letter(_letter), cal_dir(_cal_dir) {}
+    std::string letter;
+    int cal_dir;
+  };
+
+  std::vector<JointCommInfo> joint_comm_info_ = {
+    JointCommInfo("A", 0),
+    JointCommInfo("B", 0),
+    JointCommInfo("C", 1),
+    JointCommInfo("D", 0),
+    JointCommInfo("E", 0),
+    JointCommInfo("F", 1)
+  };
 
   void exchange(std::string outMsg);
   bool transmit(const std::string& outMsg, std::string& err);

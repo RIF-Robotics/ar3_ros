@@ -98,24 +98,24 @@ private:
 
   class JointInfo {
    public:
-    JointInfo(double _neg_ang_lim, double _pos_ang_lim, int _encoder_step_lim, double _calibration_dir, double enc_multiple) :
-        neg_ang_lim(_neg_ang_lim), pos_ang_lim(_pos_ang_lim), encoder_step_lim(_encoder_step_lim), calibration_dir(_calibration_dir) {
-      encoder_steps_per_deg = std::abs(encoder_step_lim * enc_multiple / (pos_ang_lim - neg_ang_lim));
+    JointInfo(double _neg_ang_lim, double _pos_ang_lim, int _encoder_step_lim, bool _switch_at_pos_ang_lim, double enc_multiple) :
+        neg_ang_lim(_neg_ang_lim), pos_ang_lim(_pos_ang_lim), encoder_step_lim(_encoder_step_lim), switch_at_pos_ang_lim(_switch_at_pos_ang_lim) {
+      encoder_steps_per_deg = encoder_step_lim * enc_multiple / std::abs(pos_ang_lim - neg_ang_lim);
     }
     double neg_ang_lim;
     double pos_ang_lim;
     int encoder_step_lim;
     double encoder_steps_per_deg;
-    double calibration_dir;
+    bool switch_at_pos_ang_lim;
   };
 
   std::vector<JointInfo> joint_info_ = {
-    JointInfo(-170.0, 170.0, 15110, +1, 5.12),
-    JointInfo(-129.6, 0.0, 7198, +1, 5.12),
-    JointInfo(+1.0, 143.7, 7984, -1, 5.12),
-    JointInfo(-164.5, 164.5, 14056, +1, 5.12),
-    JointInfo(-104.15, 104.15, 4560, +1, 2.56),
-    JointInfo(-148.1, 148.1, 6320, -1, 5.12)
+    JointInfo(-170.0, 170.0, 15110, true, 5.12),
+    JointInfo(-129.6, 0.0, 7198, false, 5.12),
+    JointInfo(+1.0, 143.7, 7984, true, 5.12),
+    JointInfo(-164.5, 164.5, 14056, false, 5.12),
+    JointInfo(-104.15, 104.15, 4560, true, 2.56),
+    JointInfo(-148.1, 148.1, 6320, true, 5.12)
   };
 
 
