@@ -2,7 +2,7 @@ import serial
 import io
 import argparse
 
-EOL = b'\r\n'
+EOL = b'\n'
 
 joint_info = {
     1: {'letter': b'A', 'cal_dir': 0, 'neg_ang_lim': -170.0 , 'pos_ang_lim': 170.0 , 'step_lim': 15110, 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 7600},
@@ -102,7 +102,7 @@ def calibrate():
     cmd = get_drive_to_limit_cmd(args.active_joints, 30)
     print('1. Limit command: %s' % cmd)
     ser.write(cmd)
-    response = parse_response(ser.read_until(b'\r'))
+    response = parse_response(ser.readline())
 
     # The LL command only uses \r for EOL
     if 'P' == response:
@@ -117,7 +117,7 @@ def calibrate():
     print('2. Write encoder command: %s' % cmd)
     ser.write(cmd)
     response = parse_response(ser.readline())
-    if 'Done' == response:
+    if 'c,OK' == response:
         print('Successfully set encoder counts.')
     else:
         print('Failed to set encoder counts: %s', response)

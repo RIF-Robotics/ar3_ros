@@ -63,71 +63,9 @@ public:
   hardware_interface::return_type write() override;
 
 private:
-  //// Parameters for the AR3 simulation
-  //double hw_start_sec_;
-  //double hw_stop_sec_;
-  //double hw_slowdown_;
-
   //// Store the command for the simulated robot
   std::vector<double> hw_commands_;
   std::vector<double> hw_states_;
-
-  std::vector<int> joint_encoder_counts_;
-
-  const int pulses_per_revolution_ = 512;
-  const double counts_per_revolution_ = pulses_per_revolution_ * 4;
-
-  // Reference: https://www.omc-stepperonline.com/ar3-open-source-robot-package-kit-stepper-motor-driver-power-supply-and-bracket.html
-  std::vector<double> gear_ratios_ = {
-    10.0,
-    50.0,
-    50.0,
-    13.0 + 212.0 / 289.0,
-    1.0, // TODO
-    19.0 + 38.0/187.0
-  };
-
-  std::vector<int> encoder_directions_ = {
-    +1,
-    -1,
-    +1,
-    +1,
-    +1,
-    -1
-  };
-
-  class JointInfo {
-   public:
-    JointInfo(double _neg_ang_lim, double _pos_ang_lim, int _encoder_step_lim, bool _switch_at_pos_ang_lim, double enc_multiple) :
-        neg_ang_lim(_neg_ang_lim), pos_ang_lim(_pos_ang_lim), encoder_step_lim(_encoder_step_lim), switch_at_pos_ang_lim(_switch_at_pos_ang_lim) {
-      encoder_steps_per_deg = encoder_step_lim * enc_multiple / std::abs(pos_ang_lim - neg_ang_lim);
-    }
-    double neg_ang_lim;
-    double pos_ang_lim;
-    int encoder_step_lim;
-    double encoder_steps_per_deg;
-    bool switch_at_pos_ang_lim;
-  };
-
-  std::vector<JointInfo> joint_info_ = {
-    JointInfo(-170.0, 170.0, 15110, true, 5.12),
-    JointInfo(-129.6, 0.0, 7198, false, 5.12),
-    JointInfo(+1.0, 143.7, 7984, true, 5.12),
-    JointInfo(-164.5, 164.5, 14056, false, 5.12),
-    JointInfo(-104.15, 104.15, 4560, true, 2.56),
-    JointInfo(-148.1, 148.1, 6320, true, 5.12)
-  };
-
-
-  std::vector<int> encoder_zero_positions_ = {
-    static_cast<int>(7600 * 5.12),
-    static_cast<int>(2322 * 5.12),
-    static_cast<int>(0 * 5.12),
-    static_cast<int>(7600 * 5.12),
-    static_cast<int>(2287 * 2.56),
-    static_cast<int>(3312 * 5.12)
-  };
-
 
   std::string serial_device_;
   int serial_baudrate_;

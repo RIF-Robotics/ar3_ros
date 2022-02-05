@@ -39,7 +39,6 @@ CallbackReturn AR3SystemPositionOnlyHardware::on_init(
 
   hw_states_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
   hw_commands_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
-  joint_encoder_counts_.resize(info_.joints.size(), std::numeric_limits<int>::quiet_NaN());
 
   for (const hardware_interface::ComponentInfo & joint : info_.joints)
   {
@@ -95,12 +94,9 @@ CallbackReturn AR3SystemPositionOnlyHardware::on_configure(
     return CallbackReturn::FAILURE;
   }
 
-  // reset values always when configuring hardware
-  for (uint i = 0; i < hw_states_.size(); i++)
-  {
-    hw_states_[i] = 0;
-    hw_commands_[i] = 0;
-  }
+  // Read the current joint positions and initialize states and commands
+  comm_.get_joint_positions(hw_states_);
+  hw_commands_ = hw_states_;
 
   return CallbackReturn::SUCCESS;
 }
@@ -151,50 +147,18 @@ CallbackReturn AR3SystemPositionOnlyHardware::on_deactivate(
 hardware_interface::return_type AR3SystemPositionOnlyHardware::read()
 {
   // Read the encoder counts
-  comm_.get_joint_encoder_counts(joint_encoder_counts_);
+  if (not comm_.get_joint_positions(hw_states_)) {
+    RCLCPP_FATAL(
+        rclcpp::get_logger("AR3SystemPositionOnlyHardware"),
+        "Failed to read joint positions");
 
-  // Convert the encoder counts to joint positions
-  for (unsigned int i = 0; i < joint_encoder_counts_.size(); ++i) {
-    if (joint_info_[i].switch_at_pos_ang_lim) {
-      hw_states_[i] = (joint_info_[i].pos_ang_lim - std::abs(joint_encoder_counts_[i] / joint_info_[i].encoder_steps_per_deg)) * M_PI / 180.0;
-    } else {
-      hw_states_[i] = (joint_info_[i].neg_ang_lim + std::abs(joint_encoder_counts_[i] / joint_info_[i].encoder_steps_per_deg)) * M_PI / 180.0;
-    }
   }
   return hardware_interface::return_type::OK;
 }
 
 hardware_interface::return_type AR3SystemPositionOnlyHardware::write()
 {
-  std::vector<int> directions = {0, 0, 0, 0, 0, 0};
-  std::vector<int> steps = {0, 0, 0, 0, 0, 0};
-
-  for (uint i = 0; i < hw_commands_.size(); i++)
-  {
-    // Simulate sending commands to the hardware
-    RCLCPP_INFO(
-      rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Got command %.5f for joint %d!",
-      hw_commands_[i], i);
-
-    if (i == 0) {
-      double angle_err = hw_commands_[i] - hw_states_[i];
-      if (angle_err < 0) {
-        directions[i] = 1;
-      } else {
-        directions[i] = 0;
-      }
-      steps[i] = angle_err * 180.0 / M_PI * joint_info_[i].encoder_steps_per_deg;
-    }
-
-  }
-
-  comm_.step_joints(directions, steps);
-  //comm_.set_joint_positions(hw_states_, hw_commands_);
-
-  //RCLCPP_INFO(
-  //  rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Joints successfully written!");
-  //// END: This part here is for exemplary purposes - Please do not copy to your production code
-
+  comm_.set_joint_positions(hw_commands_);
   return hardware_interface::return_type::OK;
 }
 

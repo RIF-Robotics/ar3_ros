@@ -81,6 +81,7 @@ int encoder_count_err[NUM_JOINTS];
 int current_motor_steps[] = {0, 0, 0, 0, 0, 0};
 int desired_motor_steps[NUM_JOINTS];
 int desired_motor_dirs[] = {0, 0, 0, 0, 0, 0};
+int prev_desired_motor_dirs[] = {0, 0, 0, 0, 0, 0};
 
 //set calibration limit switch pins
 const int J1calPin = 26;
@@ -155,7 +156,16 @@ void write_encoder_counts(const int* encoder_positions)
   }
 }
 
-void array_to_message(int* array, unsigned int length, String* msg)
+template <typename T>
+void array_to_message(T* array, unsigned int length, int precision, String* msg)
+{
+  for (unsigned int i = 0 ; i < length; ++i) {
+    *msg += String(array[i], precision) + ",";
+  }
+}
+
+template <typename T>
+void array_to_message(T* array, unsigned int length, String* msg)
 {
   for (unsigned int i = 0 ; i < length; ++i) {
     *msg += String(array[i]) + ",";
@@ -250,6 +260,9 @@ void process_incoming_message(char * data)
     case 'E':
       send_encoder_counts();
       break;
+    case 'P':
+      send_joint_positions();
+      break;
     case 'D':
       set_desired_joint_positions(data);
       break;
@@ -266,11 +279,10 @@ void process_incoming_message(char * data)
       old_move(data);
       break;
     case 'B':
-      handle_enable(data, enable_debug, String("debug"));
-      //handle_enable_debug(data);
+      handle_enable(String("b"),data, enable_debug, String("debug"));
       break;
     case 'X':
-      handle_enable(data, enable_control_loop, String("control loop"));
+      handle_enable(String("x"),data, enable_control_loop, String("control loop"));
       break;
     case 'S':
       manual_steps(data);
@@ -291,7 +303,14 @@ void send_encoder_counts()
   Serial.println(msg);
 }
 
-void handle_enable(char* data, bool* enables, String name)
+void send_joint_positions()
+{
+  String msg = "p,";
+  array_to_message(current_joint_positions_rad, NUM_JOINTS, 4, &msg);
+  Serial.println(msg);
+}
+
+void handle_enable(String letter, char* data, bool* enables, String name)
 {
   String tokens[2];
   if (!parse_line(data, ",", 2, tokens)) {
@@ -300,7 +319,7 @@ void handle_enable(char* data, bool* enables, String name)
   }
   int joint_id = tokens[1].toInt();
   enables[joint_id-1] = !enables[joint_id-1];
-  Serial.println("OK");
+  Serial.println(letter + ",OK");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -331,34 +350,42 @@ void set_desired_joint_positions(char* data)
   // Set the desired joint positions
   for (unsigned int i = 0; i < NUM_JOINTS; ++i) {
     desired_joint_positions_rad[i] = tokens[i+1].toFloat();
+    enable_control_loop[i] = true;
   }
 
-  // Convert desired joint angles to motor steps and encoder counts
   for (unsigned int i = 0; i < NUM_JOINTS; ++i) {
-    // Compute the error signal
-    joint_positions_err_rad[i] = desired_joint_positions_rad[i] - current_joint_positions_rad[i];
-
-    // Compute the absolute number of motor steps (not considering direction)
-    desired_motor_steps[i] = round(abs(joint_positions_err_rad[i]) * (float)motor_steps_per_rad[i]);
-
-    // Determine motor direction based on sign of joint position error and
-    // direction of increasing encoder count.
-    if (joint_positions_err_rad[i] < 0) {
-      desired_motor_dirs[i] = enc_dir[i] < 0 ? LOW : HIGH;
-    } else {
-      desired_motor_dirs[i] = enc_dir[i] < 0 ? HIGH : LOW;
+    if (current_state[i] == INACTIVE) {
+      current_state[i] = SET_DIRECTION;
     }
-
-    if (rot_dirs[i] == 0) {
-      desired_motor_dirs[i] = !desired_motor_dirs[i];
-    }
-
-    // Compute the desired encoder count at the desired position
-    desired_encoder_counts[i] = round((joint_pos_limits_rad[i] + enc_dir[i] * desired_joint_positions_rad[i]) * (float)encoder_counts_per_rad[i]);
-
-    // reset state machine
-    current_state[i] = SET_DIRECTION;
   }
+
+  //// Convert desired joint angles to motor steps and encoder counts
+  //for (unsigned int i = 0; i < NUM_JOINTS; ++i) {
+  //  // Compute the error signal
+  //  joint_positions_err_rad[i] = desired_joint_positions_rad[i] - current_joint_positions_rad[i];
+  //
+  //  // Compute the absolute number of motor steps (not considering direction)
+  //  desired_motor_steps[i] = round(abs(joint_positions_err_rad[i]) * (float)motor_steps_per_rad[i]);
+  //
+  //  // Determine motor direction based on sign of joint position error and
+  //  // direction of increasing encoder count.
+  //  if (joint_positions_err_rad[i] < 0) {
+  //    desired_motor_dirs[i] = enc_dir[i] < 0 ? LOW : HIGH;
+  //  } else {
+  //    desired_motor_dirs[i] = enc_dir[i] < 0 ? HIGH : LOW;
+  //  }
+  //
+  //  if (rot_dirs[i] == 0) {
+  //    desired_motor_dirs[i] = !desired_motor_dirs[i];
+  //  }
+  //
+  //  // Compute the desired encoder count at the desired position
+  //  desired_encoder_counts[i] = round((joint_pos_limits_rad[i] + enc_dir[i] * desired_joint_positions_rad[i]) * (float)encoder_counts_per_rad[i]);
+  //
+  //  // reset state machine
+  //  current_state[i] = SET_DIRECTION;
+  //}
+  Serial.println("d,OK");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -382,7 +409,7 @@ void calibrate_encoders(char* data)
   for (unsigned int i = 0; i < NUM_JOINTS; ++i) {
     current_motor_steps[i] = counts[i];// / encoder_mults[i];
   }
-  Serial.println("Done");
+  Serial.println("c,OK");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -395,7 +422,31 @@ void control_loop_motor_steps()
 
     int bit_delay = 800;
 
+    // Compute the error signal
+    //joint_positions_err_rad[i] = desired_joint_positions_rad[i] - current_joint_positions_rad[i];
+    joint_positions_err_rad[i] = desired_joint_positions_rad[i] - current_joint_positions_from_steps_rad[i];
+
+    // Compute the absolute number of motor steps (not considering direction)
+    desired_motor_steps[i] = round(abs(joint_positions_err_rad[i]) * (float)motor_steps_per_rad[i]);
+
+    // Determine motor direction based on sign of joint position error and
+    // direction of increasing encoder count.
+    if (joint_positions_err_rad[i] < 0) {
+      desired_motor_dirs[i] = enc_dir[i] < 0 ? LOW : HIGH;
+    } else {
+      desired_motor_dirs[i] = enc_dir[i] < 0 ? HIGH : LOW;
+    }
+    if (rot_dirs[i] == 0) { // Handle different rotation direction
+      desired_motor_dirs[i] = !desired_motor_dirs[i];
+    }
+
+    // Compute the desired encoder count at the desired position
+    desired_encoder_counts[i] = round((joint_pos_limits_rad[i] + enc_dir[i] * desired_joint_positions_rad[i]) * (float)encoder_counts_per_rad[i]);
     encoder_count_err[i] = desired_encoder_counts[i] - current_encoder_counts[i];
+
+    if (desired_motor_dirs[i] != prev_desired_motor_dirs[i]) {
+      current_state[i] = SET_DIRECTION;
+    }
 
     switch(current_state[i]) {
       case INACTIVE:
@@ -456,6 +507,7 @@ void control_loop_motor_steps()
         break;
     }
     current_state[i] = next_state[i];
+    prev_desired_motor_dirs[i] = desired_motor_dirs[i];
   }
 }
 
@@ -510,6 +562,7 @@ void print_debug_loop(unsigned long period, unsigned int i)
   if (time - prev_print_time[i] > period) {
     Serial << "------- " << time << "\n";
     Serial << "Joint: " << i+1 << "\n";
+    Serial << "State: " << current_state[i] << "\n";
     Serial << "motor_steps_per_rad: " << motor_steps_per_rad[i] << "\n";
     Serial << "encoder_counts_per_rad: " << encoder_counts_per_rad[i] << "\n";
     Serial.print("Current rad (encoder): "); Serial.println(current_joint_positions_rad[i], 5);
@@ -575,6 +628,11 @@ void manual_steps(char* data)
 ////////////////////////////////////////////////////////////////////////////////
 void drive_to_limit_switches(char* data)
 {
+
+  for (unsigned int i = 0; i < NUM_JOINTS; ++i) {
+    enable_control_loop[i] = false;
+  }
+
   String tokens[NUM_JOINTS+2];
   if (!parse_line(data, ",", NUM_JOINTS+2, tokens)) {
     Serial.println("Invalid calibrate encoder command.");
@@ -870,11 +928,11 @@ void drive_to_limit_switches(char* data)
   }
   if ((J1pass + J2pass + J3pass + J4pass + J5pass + J6pass) == 6)
   {
-    Serial.print("P\r");
+    Serial.println("P");
   }
   else
   {
-    Serial.print("F\r");
+    Serial.println("F");
   }
 }
 

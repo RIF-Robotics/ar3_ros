@@ -6,6 +6,8 @@
 #include <memory>
 #include <math.h>
 
+#include <boost/tokenizer.hpp>
+
 #include "ar3_hardware_driver/visibility_control.h"
 #include "ar3_hardware_driver/timeout_serial.h"
 
@@ -19,72 +21,39 @@ class AR3EncoderSwitchMotorSerialComm
   bool init(const std::string& device, int baudrate, const std::string& fw_version);
 
   AR3_HARDWARE_DRIVER_PUBLIC
-  void set_stepper_speed(std::vector<double>& max_speed,
-                         std::vector<double>& max_accel);
+  bool get_joint_encoder_counts(std::vector<int>& joint_encoder_counts);
 
   AR3_HARDWARE_DRIVER_PUBLIC
-  void update(std::vector<double>& pos_commands,
-              std::vector<double>& joint_states);
+  bool get_joint_positions(std::vector<double>& joint_positions);
 
   AR3_HARDWARE_DRIVER_PUBLIC
-  void get_joint_encoder_counts(std::vector<int>& joint_encoder_counts);
-
-  //AR3_HARDWARE_DRIVER_PUBLIC
-  //void set_joint_positions(std::vector<double>& current_joint_positions,
-  //                         std::vector<double>& desired_joint_positions);
-  AR3_HARDWARE_DRIVER_PUBLIC
-  void step_joints(std::vector<int>& directions,
-                   std::vector<int>& steps);
+  bool set_joint_positions(const std::vector<double>& desired_joint_positions);
 
   AR3_HARDWARE_DRIVER_PUBLIC
   void calibrate_joints();
 
  private:
-
-  static inline double to_degrees(double radians) {
-    return radians * (180.0 / M_PI);
-  }
-
-  static inline double to_radians(double degrees) {
-    return degrees * (M_PI / 180.0);
-  }
-
   std::shared_ptr<TimeoutSerial> serial_;
 
+  template <class T>
+  bool parse_list(const std::string& str, const std::string& delim, const unsigned int expected_length, std::vector<T>& result)
+  {
+    typedef boost::tokenizer<boost::char_separator<char>> tokenizer;
+    boost::char_separator<char> sep{delim.c_str()};
+    tokenizer tok {str, sep};
 
-  std::string version_;
-  int num_joints_;
-  std::vector<int> enc_commands_;
-  std::vector<int> enc_steps_;
-  std::vector<double> encoder_steps_per_rad_;
-  std::vector<int> enc_calibrations_;
+    std::vector<std::string> tokens;
+    for (const auto &t : tok) {
+      tokens.push_back(t);
+    }
 
-  class JointCommInfo {
-   public:
-    JointCommInfo(const std::string& _letter, int _cal_dir)
-        : letter(_letter), cal_dir(_cal_dir) {}
-    std::string letter;
-    int cal_dir;
-  };
+    if (tokens.size() != expected_length) return false;
 
-  std::vector<JointCommInfo> joint_comm_info_ = {
-    JointCommInfo("A", 0),
-    JointCommInfo("B", 0),
-    JointCommInfo("C", 1),
-    JointCommInfo("D", 0),
-    JointCommInfo("E", 0),
-    JointCommInfo("F", 1)
-  };
-
-  void exchange(std::string outMsg);
-  bool transmit(const std::string& outMsg, std::string& err);
-  bool receive(std::string &inMsg);
-
-  void update_encoder_calibrations(const std::string& msg);
-  void update_encoder_steps(const std::string& msg);
-
-  void enc_steps_to_joint_pos(const std::vector<int>& enc_steps, std::vector<double>& joint_positions);
-  void joint_pos_to_enc_steps(const std::vector<double>& joint_positions, std::vector<int>& enc_steps);
+    for (unsigned int i = 1; i < tokens.size(); ++i) {
+      result[i-1] = static_cast<T>(std::stod(tokens[i]));
+    }
+    return true;
+  }
 };
 
 }  // ar3_hardware_driver
