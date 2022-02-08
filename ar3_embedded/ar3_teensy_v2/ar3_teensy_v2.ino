@@ -497,6 +497,8 @@ void control_loop_motor_steps()
         break;
       case SET_DIRECTION:
         digitalWrite(dir_pins[i], desired_motor_dirs[i]);
+        prev_desired_motor_dirs[i] = desired_motor_dirs[i];
+
         next_state[i] = SET_DIRECTION_DELAY;
         delay_until[i] = time + bit_delay;
         break;
@@ -550,7 +552,6 @@ void control_loop_motor_steps()
         break;
     }
     current_state[i] = next_state[i];
-    prev_desired_motor_dirs[i] = desired_motor_dirs[i];
   }
 }
 
@@ -644,6 +645,9 @@ void print_debug_loop(unsigned long period, unsigned int i)
     Serial.print("Current rad (motor): "); Serial.println(current_joint_positions_from_steps_rad[i], 5);
     Serial << "Desired rad: " << desired_joint_positions_rad[i] << "\n";
     Serial << "Limit Switch: " << limit_switch_states[i] << "\n";
+    Serial << "desired_motor_dir: " << desired_motor_dirs[i] << "\n";
+    Serial << "Current Motor Direction: " << digitalRead(dir_pins[i]) << "\n";
+    Serial << "joint_positions_err_rad: " << joint_positions_err_rad[i] << "\n";
     prev_print_time[i] = time;
   }
 }
@@ -715,7 +719,11 @@ void drive_to_limit_switches(char* data)
   // Set desired angles to limits
   for (unsigned int i = 0; i < NUM_JOINTS; ++i) {
     if (cal_dirs[i] == 0) {
-      desired_joint_positions_rad[i] = joint_neg_limits_rad[i];
+      if (enc_dir[i] > 0) {
+        desired_joint_positions_rad[i] = joint_neg_limits_rad[i];
+      } else {
+        desired_joint_positions_rad[i] = joint_pos_limits_rad[i];
+      }
     } else {
       desired_joint_positions_rad[i] = joint_pos_limits_rad[i];
     }

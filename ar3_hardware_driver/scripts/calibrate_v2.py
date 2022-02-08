@@ -115,11 +115,10 @@ def calibrate():
     print('1. Limit command: %s' % cmd)
     ser.write(cmd)
     response = parse_response(ser.readline())
-
     if 'P' == response:
         print('Joints reached limit switches')
     else:
-        print("Calibration fail: %s", response)
+        print("Move to limits failed: %s", response)
         return
 
     # 2. Write calibration positions to encoders
@@ -139,19 +138,18 @@ def calibrate():
     print('3. Move away command: %s' % cmd)
     ser.timeout = 10
     ser.write(cmd)
-    result = parse_response(ser.readline())
-    print('MJ response: ', result)
+    response = parse_response(ser.readline())
+    print('MJ response: ', response)
 
     # 4. Command the motors to hit the limit switches at slower speed
     cmd = get_drive_to_limit_cmd(args.active_joints, 8)
     print('4. Drive to limit command: %s' % cmd)
     ser.write(cmd)
     response = parse_response(ser.readline())
-
     if 'P' == response:
         print('Joints reached limit switches')
     else:
-        print("Calibration fail: %s", response)
+        print("Move to limits failed: %s", response)
         return
 
     # 5. Write calibration positions to encoders
@@ -166,7 +164,19 @@ def calibrate():
         print('Failed to set encoder counts: %s', response)
         return
 
-    # 6. Enable all control loops:
+    # 6. Set the rest position as the desired position
+    print('Moving to rest position.')
+    cmd = b'D,0,-1.6,0.05,0,-0.6,0' + EOL
+    print('6. Set desired position command: %s' % cmd)
+    ser.write(cmd)
+    response = parse_response(ser.readline())
+    if 'd,OK' == response:
+        print('Successfully set desired positions.')
+    else:
+        print('Failed to set desired positions: %s', response)
+        return
+
+    # 7. Enable all control loops:
     cmd = enable_control_loops(args.active_joints)
     ser.write(cmd)
     response = parse_response(ser.readline())
@@ -175,13 +185,7 @@ def calibrate():
     else:
         print('Failed to enable control loops')
 
-    # 6. Go to rest position
-    print('Moving to rest position.')
-    #ser.timeout = 20
-    cmd = b'D,0,-1.6,0.05,0,-0.6,0' + EOL
-    print('6. Rest position command: %s' % cmd)
-    ser.write(cmd)
-    #result = parse_response(ser.readline())
+
 
 if __name__ == '__main__':
     calibrate()
