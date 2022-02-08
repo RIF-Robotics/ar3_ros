@@ -3,7 +3,7 @@
     This is a format for representing semantic information about the robot structure.
     A URDF file must exist for this robot as well, where the joints and the links that are referenced are defined
 -->
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="ar3">
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="ar3_robot">
   <xacro:include filename="$(find ar3_moveit_config)/config/ar3_arm.xacro" />
   <xacro:ar3_arm />
 </robot>

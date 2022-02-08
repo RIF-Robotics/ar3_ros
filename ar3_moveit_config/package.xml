@@ -16,7 +16,6 @@
 
   <exec_depend>ar3_description</exec_depend>
   <exec_depend>moveit_ros_move_group</exec_depend>
-  <exec_depend>moveit_fake_controller_manager</exec_depend>
   <exec_depend>moveit_kinematics</exec_depend>
   <exec_depend>moveit_planners_ompl</exec_depend>
   <exec_depend>moveit_ros_visualization</exec_depend>

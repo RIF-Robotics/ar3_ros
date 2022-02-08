@@ -11,10 +11,10 @@ controller_manager:
 joint_trajectory_controller:
   ros__parameters:
     joints:
-      - ar3_joint1
-      - ar3_joint2
-      - ar3_joint3
-      - ar3_joint4
-      - ar3_joint5
-      - ar3_joint6
+      - joint1
+      - joint2
+      - joint3
+      - joint4
+      - joint5
+      - joint6
     interface_name: position
