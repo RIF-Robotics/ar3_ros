@@ -74,6 +74,18 @@ def get_rest_position_cmd(joints):
     cmd += EOL
     return cmd
 
+def enable_control_loops(joints):
+    cmd = b'X,'
+
+    for key, joint in joint_info.items():
+        if key in joints:
+            cmd += b'1,'
+        else:
+            cmd += b'0,'
+
+    cmd += EOL
+    return cmd
+
 
 def calibrate():
     parser = argparse.ArgumentParser(description='Calibrate the AR3 robot arm.')
@@ -104,7 +116,6 @@ def calibrate():
     ser.write(cmd)
     response = parse_response(ser.readline())
 
-    # The LL command only uses \r for EOL
     if 'P' == response:
         print('Joints reached limit switches')
     else:
@@ -123,49 +134,54 @@ def calibrate():
         print('Failed to set encoder counts: %s', response)
         return
 
-    ## 3. Move away from limit switches
-    #cmd = get_move_away_from_limits_cmd(args.active_joints)
-    #print('3. Move away command: %s' % cmd)
-    #ser.timeout = 10
-    #ser.write(cmd)
-    #result = parse_response(ser.readline())
-    #print('MJ response: ', result)
-    #
-    ## 4. Command the motors to hit the limit switches at slower speed
-    #cmd = get_drive_to_limit_cmd(args.active_joints, 8)
-    #print('4. Drive to limit command: %s' % cmd)
-    #ser.write(cmd)
-    #response = parse_response(ser.read_until(b'\r'))
-    #
-    ## The LL command only uses \r for EOL
-    #if 'P' == response:
-    #    print('Joints reached limit switches')
-    #else:
-    #    print("Calibration fail: %s", response)
-    #    return
-    #
-    ## 5. Write calibration positions to encoders
-    #ser.timeout = 1
-    #cmd = get_zero_calibrate_encoders_cmd()
-    #print('5. Write encoder command: %s' % cmd)
-    #ser.write(cmd)
-    #response = parse_response(ser.readline())
-    #if 'Done' == response:
-    #    print('Successfully set encoder counts.')
-    #else:
-    #    print('Failed to set encoder counts: %s', response)
-    #    return
-    #
-    ## 6. Go to rest position
-    #print('Moving to rest position.')
+    # 3. Move away from limit switches
+    cmd = get_move_away_from_limits_cmd(args.active_joints)
+    print('3. Move away command: %s' % cmd)
+    ser.timeout = 10
+    ser.write(cmd)
+    result = parse_response(ser.readline())
+    print('MJ response: ', result)
+
+    # 4. Command the motors to hit the limit switches at slower speed
+    cmd = get_drive_to_limit_cmd(args.active_joints, 8)
+    print('4. Drive to limit command: %s' % cmd)
+    ser.write(cmd)
+    response = parse_response(ser.readline())
+
+    if 'P' == response:
+        print('Joints reached limit switches')
+    else:
+        print("Calibration fail: %s", response)
+        return
+
+    # 5. Write calibration positions to encoders
+    ser.timeout = 1
+    cmd = get_zero_calibrate_encoders_cmd()
+    print('5. Write encoder command: %s' % cmd)
+    ser.write(cmd)
+    response = parse_response(ser.readline())
+    if 'c,OK' == response:
+        print('Successfully set encoder counts.')
+    else:
+        print('Failed to set encoder counts: %s', response)
+        return
+
+    # 6. Enable all control loops:
+    cmd = enable_control_loops(args.active_joints)
+    ser.write(cmd)
+    response = parse_response(ser.readline())
+    if 'x,OK' == response:
+        print('Enabled control loops')
+    else:
+        print('Failed to enable control loops')
+
+    # 6. Go to rest position
+    print('Moving to rest position.')
     #ser.timeout = 20
-    #cmd = get_rest_position_cmd(args.active_joints)
-    #print('6. Rest position command: %s' % cmd)
-    #ser.write(cmd)
+    cmd = b'D,0,-1.6,0.05,0,-0.6,0' + EOL
+    print('6. Rest position command: %s' % cmd)
+    ser.write(cmd)
     #result = parse_response(ser.readline())
-    #print('MJ response: ', result)
-
-
 
 if __name__ == '__main__':
     calibrate()

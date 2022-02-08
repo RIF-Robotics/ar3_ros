@@ -91,6 +91,13 @@ const int J4calPin = 29;
 const int J5calPin = 30;
 const int J6calPin = 31;
 const int limit_switches[] = {J1calPin, J2calPin, J3calPin, J4calPin, J5calPin, J6calPin};
+const unsigned int cal_dirs[] = {0, 0, 1, 0, 0, 1};
+
+int limit_switch_states[] = {0, 0, 0, 0, 0, 0};
+int last_limit_switch_states[] = {0, 0, 0, 0, 0, 0};
+unsigned long last_debounce_times[] = {0, 0, 0, 0, 0, 0};
+unsigned long debounce_delay = 10000;
+int limit_switch_rising_edges[] = {0, 0, 0, 0, 0, 0};
 
 //set encoder multiplier
 const float J1encMult = 5.12;
@@ -235,6 +242,8 @@ void loop()
   // TODO: Handle clock rollover
   time = micros();
 
+  update_limit_switch_states();
+
   // Update encoder counts and joint angles once per loop
   calculate_current_joint_positions();
 
@@ -287,10 +296,68 @@ void process_incoming_message(char * data)
     case 'S':
       manual_steps(data);
       break;
+    case 'Q':
+      send_error_status();
+      break;
+    case 'W':
+      send_limit_switch_rising_edges();
+      break;
     default:
       Serial.println("Invalid command!");
       break;
   }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/// Send Limit Switch Detections
+////////////////////////////////////////////////////////////////////////////////
+void send_limit_switch_rising_edges()
+{
+  String msg = "w,";
+  array_to_message(limit_switch_rising_edges, NUM_JOINTS, &msg);
+  Serial.println(msg);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/// Send status
+/// Encoder / motor steps out of step
+/// Limit switch triggered
+////////////////////////////////////////////////////////////////////////////////
+void send_error_status()
+{
+  String msg = "q,";
+
+  // Calculate difference in joint positions based on motor steps and encoders
+  bool angles_out_of_limits = false;
+  float angle_diffs[NUM_JOINTS];
+  for (unsigned int i = 0; i < NUM_JOINTS; ++i) {
+    angle_diffs[i] = current_joint_positions_from_steps_rad[i] - current_joint_positions_rad[i];
+    if (abs(angle_diffs[i]) > 0.005) {
+      angles_out_of_limits = true;
+    }
+  }
+
+  if (angles_out_of_limits) {
+    msg += String("1,");
+  } else {
+    msg += String("0,");
+  }
+
+  // Check if the limit switches have been triggered
+  bool limit_switch_triggered = false;
+  for (unsigned int i = 0; i < NUM_JOINTS; ++i) {
+    if (limit_switch_rising_edges[i] > 0) {
+      limit_switch_triggered = true;
+    }
+  }
+
+  if (limit_switch_triggered) {
+    msg += String("1");
+  } else {
+    msg += String("0");
+  }
+
+  Serial.println(msg);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -312,13 +379,15 @@ void send_joint_positions()
 
 void handle_enable(String letter, char* data, bool* enables, String name)
 {
-  String tokens[2];
-  if (!parse_line(data, ",", 2, tokens)) {
+  String tokens[NUM_JOINTS+1];
+  if (!parse_line(data, ",", NUM_JOINTS+1, tokens)) {
     Serial << "Invalid toggle command: " << name << "\n";
     return;
   }
-  int joint_id = tokens[1].toInt();
-  enables[joint_id-1] = !enables[joint_id-1];
+
+  for (unsigned int i = 0; i < NUM_JOINTS; ++i) {
+    enables[i] = (bool)constrain(tokens[i+1].toInt(), 0, 1);
+  }
   Serial.println(letter + ",OK");
 }
 
@@ -347,10 +416,9 @@ void set_desired_joint_positions(char* data)
     return;
   }
 
-  // Set the desired joint positions
+  // Set the desired joint positions, clamp/constrain to valid ranges
   for (unsigned int i = 0; i < NUM_JOINTS; ++i) {
-    desired_joint_positions_rad[i] = tokens[i+1].toFloat();
-    enable_control_loop[i] = true;
+    desired_joint_positions_rad[i] = constrain(tokens[i+1].toFloat(), joint_neg_limits_rad[i], joint_pos_limits_rad[i]);
   }
 
   for (unsigned int i = 0; i < NUM_JOINTS; ++i) {
@@ -359,32 +427,6 @@ void set_desired_joint_positions(char* data)
     }
   }
 
-  //// Convert desired joint angles to motor steps and encoder counts
-  //for (unsigned int i = 0; i < NUM_JOINTS; ++i) {
-  //  // Compute the error signal
-  //  joint_positions_err_rad[i] = desired_joint_positions_rad[i] - current_joint_positions_rad[i];
-  //
-  //  // Compute the absolute number of motor steps (not considering direction)
-  //  desired_motor_steps[i] = round(abs(joint_positions_err_rad[i]) * (float)motor_steps_per_rad[i]);
-  //
-  //  // Determine motor direction based on sign of joint position error and
-  //  // direction of increasing encoder count.
-  //  if (joint_positions_err_rad[i] < 0) {
-  //    desired_motor_dirs[i] = enc_dir[i] < 0 ? LOW : HIGH;
-  //  } else {
-  //    desired_motor_dirs[i] = enc_dir[i] < 0 ? HIGH : LOW;
-  //  }
-  //
-  //  if (rot_dirs[i] == 0) {
-  //    desired_motor_dirs[i] = !desired_motor_dirs[i];
-  //  }
-  //
-  //  // Compute the desired encoder count at the desired position
-  //  desired_encoder_counts[i] = round((joint_pos_limits_rad[i] + enc_dir[i] * desired_joint_positions_rad[i]) * (float)encoder_counts_per_rad[i]);
-  //
-  //  // reset state machine
-  //  current_state[i] = SET_DIRECTION;
-  //}
   Serial.println("d,OK");
 }
 
@@ -418,12 +460,9 @@ void calibrate_encoders(char* data)
 void control_loop_motor_steps()
 {
   for (unsigned int i = 0; i < NUM_JOINTS; ++i) {
-    if (!enable_control_loop[i]) continue;
-
     int bit_delay = 800;
 
     // Compute the error signal
-    //joint_positions_err_rad[i] = desired_joint_positions_rad[i] - current_joint_positions_rad[i];
     joint_positions_err_rad[i] = desired_joint_positions_rad[i] - current_joint_positions_from_steps_rad[i];
 
     // Compute the absolute number of motor steps (not considering direction)
@@ -447,6 +486,10 @@ void control_loop_motor_steps()
     if (desired_motor_dirs[i] != prev_desired_motor_dirs[i]) {
       current_state[i] = SET_DIRECTION;
     }
+
+    // If the control loop is disabled, don't allow the changing of output
+    // signals, but allow for the previous calculations in this loop.
+    if (!enable_control_loop[i]) continue;
 
     switch(current_state[i]) {
       case INACTIVE:
@@ -553,6 +596,39 @@ void process_byte(const byte inByte)
   }
 }
 
+void update_limit_switch_states()
+{
+  bool disable_control_loops = false;
+  for (unsigned int i = 0; i < NUM_JOINTS; ++i) {
+    int reading = digitalRead(limit_switches[i]);
+    if (reading != last_limit_switch_states[i]) {
+      last_debounce_times[i] = time;
+    }
+
+    if (time - last_debounce_times[i] > debounce_delay) {
+      // if the limit switch state has changed:
+      if (reading != limit_switch_states[i]) {
+        // if the limit switch has changed from LOW to HIGH, disable all
+        // control loops (i.e., Rising edge detection)
+        if (reading == HIGH) {
+          disable_control_loops = true;
+          ++limit_switch_rising_edges[i];
+        }
+
+        // Update the state with the latest reading
+        limit_switch_states[i] = reading;
+      }
+    }
+    last_limit_switch_states[i] = reading;
+  }
+
+  if (disable_control_loops) {
+    for (unsigned int i = 0; i < NUM_JOINTS; ++i) {
+      enable_control_loop[i] = false;
+    }
+  }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 /// Print debug values in a timed loop
 ////////////////////////////////////////////////////////////////////////////////
@@ -562,16 +638,12 @@ void print_debug_loop(unsigned long period, unsigned int i)
   if (time - prev_print_time[i] > period) {
     Serial << "------- " << time << "\n";
     Serial << "Joint: " << i+1 << "\n";
+    Serial << "Control Loop Enabled: " << enable_control_loop[i] << "\n";
     Serial << "State: " << current_state[i] << "\n";
-    Serial << "motor_steps_per_rad: " << motor_steps_per_rad[i] << "\n";
-    Serial << "encoder_counts_per_rad: " << encoder_counts_per_rad[i] << "\n";
     Serial.print("Current rad (encoder): "); Serial.println(current_joint_positions_rad[i], 5);
     Serial.print("Current rad (motor): "); Serial.println(current_joint_positions_from_steps_rad[i], 5);
     Serial << "Desired rad: " << desired_joint_positions_rad[i] << "\n";
-    Serial << "Encoder count err: " << encoder_count_err[i] << "\n";
-    Serial << "Desired enc count: " << desired_encoder_counts[i] << "\n";
-    Serial << "Current enc count: " << current_encoder_counts[i] << "\n";
-    Serial << "Desired_motor_steps: " << desired_motor_steps[i] << "\n";
+    Serial << "Limit Switch: " << limit_switch_states[i] << "\n";
     prev_print_time[i] = time;
   }
 }
@@ -628,9 +700,25 @@ void manual_steps(char* data)
 ////////////////////////////////////////////////////////////////////////////////
 void drive_to_limit_switches(char* data)
 {
-
+  // Disable the normal control loops
   for (unsigned int i = 0; i < NUM_JOINTS; ++i) {
     enable_control_loop[i] = false;
+  }
+
+  // Reset limit switch rising edges
+  for (unsigned int i = 0; i < NUM_JOINTS; ++i) {
+    limit_switch_states[i] = 1;
+    last_limit_switch_states[i] = 1;
+    limit_switch_rising_edges[i] = 0;
+  }
+
+  // Set desired angles to limits
+  for (unsigned int i = 0; i < NUM_JOINTS; ++i) {
+    if (cal_dirs[i] == 0) {
+      desired_joint_positions_rad[i] = joint_neg_limits_rad[i];
+    } else {
+      desired_joint_positions_rad[i] = joint_pos_limits_rad[i];
+    }
   }
 
   String tokens[NUM_JOINTS+2];
