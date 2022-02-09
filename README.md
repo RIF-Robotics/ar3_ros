@@ -11,8 +11,19 @@ Contains the ROS2 packages for the AR3 robot arm
     $ source /opt/ros/foxy/setup.bash
     $ colcon build --symlink-install
 
-## Run Simple Demo
+## Visualize AR3 in rviz
 
     $ cd ~/ros2/ar3_ws
     $ source ./install/setup.bash
-    $ ros2 launch ar3_moveit_config sim_demo.launch.py
+    $ ros2 launch ar3_bringup rviz.launch.py
+
+## Simple simulation of AR3
+
+The `use_fake_hardware` flag uses a simple software loop back, which won't
+communicate with the real AR3 robot arm.
+
+    $ ros2 launch ar3_bringup ar3_base.launch.py use_fake_hardware:=True
+
+## Connect ROS2 to Physical AR3
+
+    $ ros2 launch ar3_bringup ar3_base.launch.py
