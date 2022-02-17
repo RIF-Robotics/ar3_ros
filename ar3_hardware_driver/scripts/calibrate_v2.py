@@ -9,7 +9,7 @@ joint_info = {
     2: {'letter': b'B', 'cal_dir': 0, 'neg_ang_lim': -129.6 , 'pos_ang_lim': 0.0   , 'step_lim': 7198 , 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 2139},
     3: {'letter': b'C', 'cal_dir': 1, 'neg_ang_lim': +1.0   , 'pos_ang_lim': 143.7 , 'step_lim': 7984 , 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 7895},
     4: {'letter': b'D', 'cal_dir': 0, 'neg_ang_lim': -164.5 , 'pos_ang_lim': 164.5 , 'step_lim': 14056, 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 7049},
-    5: {'letter': b'E', 'cal_dir': 0, 'neg_ang_lim': -104.15, 'pos_ang_lim': 104.15, 'step_lim': 4560 , 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 1500},
+    5: {'letter': b'E', 'cal_dir': 0, 'neg_ang_lim': -107   , 'pos_ang_lim': 107   , 'step_lim': 4685 , 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 2343},
     6: {'letter': b'F', 'cal_dir': 1, 'neg_ang_lim': -148.1 , 'pos_ang_lim': 148.1 , 'step_lim': 6320 , 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 3062}
 }
 
@@ -166,7 +166,7 @@ def calibrate():
 
     # 6. Set the rest position as the desired position
     print('Moving to rest position.')
-    cmd = b'D,0,-1.6,0.05,0,-0.6,0' + EOL
+    cmd = b'D,0,-1.6,0.05,0,0,0' + EOL
     print('6. Set desired position command: %s' % cmd)
     ser.write(cmd)
     response = parse_response(ser.readline())

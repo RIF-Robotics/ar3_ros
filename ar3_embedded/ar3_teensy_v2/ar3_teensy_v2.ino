@@ -115,10 +115,10 @@ unsigned long time_unit = 1000000;
 int one_second = 1 * time_unit;
 int half_second = time_unit / 2.0;
 
-const float joint_neg_limits_rad[] = {-170.0 * M_PI/180.0, -129.6 * M_PI/180.0,  +1.0 * M_PI/180.0, -164.5 * M_PI/180.0, -104.15 * M_PI/180.0, -148.1 * M_PI/180.0};
-const float joint_pos_limits_rad[] = {+170.0 * M_PI/180.0,   +0.0 * M_PI/180.0, 143.7 * M_PI/180.0,  164.5 * M_PI/180.0, +104.15 * M_PI/180.0, +148.1 * M_PI/180.0};
+const float joint_neg_limits_rad[] = {-170.0 * M_PI/180.0, -129.6 * M_PI/180.0,  +1.0 * M_PI/180.0, -164.5 * M_PI/180.0, -73 * M_PI/180.0, -148.1 * M_PI/180.0};
+const float joint_pos_limits_rad[] = {+170.0 * M_PI/180.0,   +0.0 * M_PI/180.0, 143.7 * M_PI/180.0,  164.5 * M_PI/180.0, +73 * M_PI/180.0, +148.1 * M_PI/180.0};
 const float enc_dir[] = {-1, +1, +1, +1, +1, +1};
-const int  motor_step_limits[] = { 15110,   7198,  7984,  14056,    4560,   6320};
+const int  motor_step_limits[] = { 15110, 7198, 7984, 14056, 3196, 6320};
 int joint_pos_limit_encoder_count[NUM_JOINTS];
 int joint_pos_limit_motor_steps[NUM_JOINTS];
 
