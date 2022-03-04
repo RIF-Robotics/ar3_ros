@@ -28,7 +28,7 @@ target_include_directories(
   ${PROJECT_NAME}
   PRIVATE
   include
-)
+  )
 ament_target_dependencies(
   ${PROJECT_NAME}
   hardware_interface
@@ -36,7 +36,7 @@ ament_target_dependencies(
   rclcpp
   rclcpp_lifecycle
   ar3_hardware_driver
-)
+  )
 
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
