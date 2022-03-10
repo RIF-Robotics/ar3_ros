@@ -435,22 +435,21 @@ void set_desired_joint_positions(char* data)
 ////////////////////////////////////////////////////////////////////////////////
 void calibrate_encoders(char* data)
 {
-  String tokens[NUM_JOINTS+1];
-  if (!parse_line(data, ",", NUM_JOINTS+1, tokens)) {
+  String tokens[NUM_JOINTS+2];
+  if (!parse_line(data, ",", NUM_JOINTS+2, tokens)) {
     Serial.println("Invalid calibrate encoder command.");
     return;
   }
 
-  int counts[NUM_JOINTS];
+  byte joint_select = tokens[1].toInt();
   for (unsigned int i = 0; i < NUM_JOINTS; ++i) {
-    counts[i] = tokens[i+1].toInt();
+    if (joint_select & (1 << i)) {
+      current_motor_steps[i] = tokens[i+2].toInt();
+    }
   }
-  write_encoder_counts(counts);
 
-  // Set the motor counts
-  for (unsigned int i = 0; i < NUM_JOINTS; ++i) {
-    current_motor_steps[i] = counts[i];// / encoder_mults[i];
-  }
+  write_encoder_counts(current_motor_steps);
+
   Serial.println("c,OK");
 }
 

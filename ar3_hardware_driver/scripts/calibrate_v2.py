@@ -1,21 +1,21 @@
 import serial
 import io
 import argparse
+from math import isclose
 
 EOL = b'\n'
 
 joint_info = {
-    1: {'letter': b'A', 'cal_dir': 0, 'neg_ang_lim': -170.0 , 'pos_ang_lim': 170.0 , 'step_lim': 15110, 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 7600},
-    2: {'letter': b'B', 'cal_dir': 0, 'neg_ang_lim': -129.6 , 'pos_ang_lim': 0.0   , 'step_lim': 7198 , 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 2139},
-    3: {'letter': b'C', 'cal_dir': 1, 'neg_ang_lim': +1.0   , 'pos_ang_lim': 143.7 , 'step_lim': 7984 , 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 7895},
-    4: {'letter': b'D', 'cal_dir': 0, 'neg_ang_lim': -164.5 , 'pos_ang_lim': 164.5 , 'step_lim': 14056, 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 7049},
-    5: {'letter': b'E', 'cal_dir': 0, 'neg_ang_lim': -107   , 'pos_ang_lim': 107   , 'step_lim': 4685 , 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 2343},
-    6: {'letter': b'F', 'cal_dir': 1, 'neg_ang_lim': -148.1 , 'pos_ang_lim': 148.1 , 'step_lim': 6320 , 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 3062}
+    1: {'letter': b'A', 'cal_dir': 0, 'neg_ang_lim': -170.0 , 'pos_ang_lim': 170.0 , 'step_lim': 15110, 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 7600, 'rest':  0.0},
+    2: {'letter': b'B', 'cal_dir': 0, 'neg_ang_lim': -129.6 , 'pos_ang_lim': 0.0   , 'step_lim': 7198 , 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 2139, 'rest': -1.6},
+    3: {'letter': b'C', 'cal_dir': 1, 'neg_ang_lim': +1.0   , 'pos_ang_lim': 143.7 , 'step_lim': 7984 , 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 7895, 'rest':  0.05},
+    4: {'letter': b'D', 'cal_dir': 0, 'neg_ang_lim': -164.5 , 'pos_ang_lim': 164.5 , 'step_lim': 14056, 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 7049, 'rest':  0.0},
+    5: {'letter': b'E', 'cal_dir': 0, 'neg_ang_lim': -107   , 'pos_ang_lim': 107   , 'step_lim': 4685 , 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 2343, 'rest':  0.0},
+    6: {'letter': b'F', 'cal_dir': 1, 'neg_ang_lim': -148.1 , 'pos_ang_lim': 148.1 , 'step_lim': 6320 , 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 3062, 'rest':  0.0}
 }
 
 def parse_response(response):
     return response.strip().decode("utf-8")
-
 
 def get_drive_to_limit_cmd(joints, speed):
     cmd = b'L,'
@@ -33,8 +33,8 @@ def get_drive_to_limit_cmd(joints, speed):
     cmd += EOL
     return cmd
 
-def get_zero_calibrate_encoders_cmd():
-    cmd = b'C,'
+def get_zero_calibrate_encoders_cmd(joint_select):
+    cmd = b'C,' + str(joint_select).encode('utf-8') + b','
 
     for key, joint in joint_info.items():
         if joint['cal_dir'] == 0:
@@ -60,21 +60,30 @@ def get_move_away_from_limits_cmd(joints):
     cmd += EOL
     return cmd
 
-def get_rest_position_cmd(joints):
-    cmd = b'M,'
+def get_joint_positions(ser):
+    cmd = b'P' + EOL
+    ser.write(cmd)
+    positions = parse_response(ser.readline()).split(',')
+    if len(positions) != 8:
+        print('Error: Invalid joint position size.')
+    return list(map(float, positions[1:7]))
 
-    for key, joint in joint_info.items():
-        if key in joints:
-            cmd += str(joint['rest_count']).encode('utf-8')
-        else:
-            cmd += b'0'
-        cmd += b','
+def wait_until_positions_reached(ser, active_joints, desired):
+    active_select = [False if i+1 in active_joints else True for i in range(len(desired))]
 
-    cmd += b'50'
-    cmd += EOL
-    return cmd
+    not_reached = True
+    while not_reached:
+        current = get_joint_positions(ser)
+        print('Desired: ', desired)
+        print('Current: ', current)
 
-def enable_control_loops(joints):
+        joints_reached = [isclose(n0, n1, abs_tol = 0.01)
+                          for n0, n1 in zip(desired, current)]
+
+        not_reached = not all(i or j for i, j in zip(active_select, joints_reached))
+
+
+def enable_control_loops_cmd(joints):
     cmd = b'X,'
 
     for key, joint in joint_info.items():
@@ -86,10 +95,99 @@ def enable_control_loops(joints):
     cmd += EOL
     return cmd
 
+def enable_control_loops(ser, joints):
+    cmd = enable_control_loops_cmd(joints)
+    print('Enable control loops command: %s' % cmd)
+    ser.write(cmd)
+    response = parse_response(ser.readline())
+    if 'x,OK' == response:
+        print('Enabled control loops')
+    else:
+        print('Failed to enable control loops')
 
-def calibrate():
+
+def partial_calibrate(ser, active_joints):
+    # Create the bit select for the active joints
+    joint_select = sum([1 << (x-1) for x in active_joints])
+
+    # Set a long timeout during the calibration movement
+    ser.timeout = 60
+
+    # 1. Command the motors to hit the limit switches
+    cmd = get_drive_to_limit_cmd(active_joints, 30)
+    print('1. Limit command: %s' % cmd)
+    ser.write(cmd)
+    response = parse_response(ser.readline())
+    if 'P' == response:
+        print('Joints reached limit switches')
+    else:
+        print("Move to limits failed: %s", response)
+        return
+
+    # 2. Write calibration positions to encoders
+    ser.timeout = 1
+    cmd = get_zero_calibrate_encoders_cmd(joint_select)
+    print('2. Write encoder command: %s' % cmd)
+    ser.write(cmd)
+    response = parse_response(ser.readline())
+    if 'c,OK' == response:
+        print('Successfully set encoder counts.')
+    else:
+        print('Failed to set encoder counts: %s', response)
+        return
+
+    # 3. Move away from limit switches
+    cmd = get_move_away_from_limits_cmd(active_joints)
+    print('3. Move away command: %s' % cmd)
+    ser.timeout = 10
+    ser.write(cmd)
+    response = parse_response(ser.readline())
+    print('MJ response: ', response)
+
+    # 4. Command the motors to hit the limit switches at slower speed
+    cmd = get_drive_to_limit_cmd(active_joints, 8)
+    print('4. Drive to limit command: %s' % cmd)
+    ser.write(cmd)
+    response = parse_response(ser.readline())
+    if 'P' == response:
+        print('Joints reached limit switches')
+    else:
+        print("Move to limits failed: %s", response)
+        return
+
+    # 5. Write calibration positions to encoders
+    ser.timeout = 1
+    cmd = get_zero_calibrate_encoders_cmd(joint_select)
+    print('5. Write encoder command: %s' % cmd)
+    ser.write(cmd)
+    response = parse_response(ser.readline())
+    if 'c,OK' == response:
+        print('Successfully set encoder counts.')
+    else:
+        print('Failed to set encoder counts: %s', response)
+        return
+
+    # 6. Set the rest position as the desired position
+    print('Moving to rest position.')
+
+    rest_positions_str = ','.join([str(info['rest']) for _, info in joint_info.items()])
+    #cmd = b'D,0,-1.6,0.05,0,0,0' + EOL
+    cmd = b'D,' + rest_positions_str.encode('utf-8') + EOL
+    print('6. Set desired position command: %s' % cmd)
+    ser.write(cmd)
+    response = parse_response(ser.readline())
+    if 'd,OK' == response:
+        print('Successfully set desired positions.')
+    else:
+        print('Failed to set desired positions: %s', response)
+        return
+
+    # 7. Enable all control loops:
+    enable_control_loops(ser, active_joints)
+
+def main():
     parser = argparse.ArgumentParser(description='Calibrate the AR3 robot arm.')
-    parser.add_argument('active_joints', metavar='N', type=int, nargs='+',
+    parser.add_argument('--joints', metavar='N', type=int, nargs='+',
                         help='Joints to calibrate.')
     args = parser.parse_args()
 
@@ -107,85 +205,26 @@ def calibrate():
 
     print('Connected to AR3.')
 
-    # Set a long timeout during the calibration movement
-    ser.timeout = 60
-
-    # 1. Command the motors to hit the limit switches
-    cmd = get_drive_to_limit_cmd(args.active_joints, 30)
-    print('1. Limit command: %s' % cmd)
-    ser.write(cmd)
-    response = parse_response(ser.readline())
-    if 'P' == response:
-        print('Joints reached limit switches')
+    if args.joints is not None:
+        # If joints are specified, only calibrate those joints
+        print('Performing partial calibration.')
+        partial_calibrate(ser, args.joints)
     else:
-        print("Move to limits failed: %s", response)
-        return
+        # If joints aren't specified, perform full calibration
+        print('Performing full calibration.')
+        active_joints = [1, 2, 3, 4, 6]
+        partial_calibrate(ser, active_joints)
 
-    # 2. Write calibration positions to encoders
-    ser.timeout = 1
-    cmd = get_zero_calibrate_encoders_cmd()
-    print('2. Write encoder command: %s' % cmd)
-    ser.write(cmd)
-    response = parse_response(ser.readline())
-    if 'c,OK' == response:
-        print('Successfully set encoder counts.')
-    else:
-        print('Failed to set encoder counts: %s', response)
-        return
+        # Wait for the desired positions to be achieved
+        rest_positions = [info['rest'] for _, info in joint_info.items()]
+        wait_until_positions_reached(ser, active_joints, rest_positions)
 
-    # 3. Move away from limit switches
-    cmd = get_move_away_from_limits_cmd(args.active_joints)
-    print('3. Move away command: %s' % cmd)
-    ser.timeout = 10
-    ser.write(cmd)
-    response = parse_response(ser.readline())
-    print('MJ response: ', response)
+        active_joints = [5]
+        partial_calibrate(ser, active_joints)
+        wait_until_positions_reached(ser, active_joints, rest_positions)
 
-    # 4. Command the motors to hit the limit switches at slower speed
-    cmd = get_drive_to_limit_cmd(args.active_joints, 8)
-    print('4. Drive to limit command: %s' % cmd)
-    ser.write(cmd)
-    response = parse_response(ser.readline())
-    if 'P' == response:
-        print('Joints reached limit switches')
-    else:
-        print("Move to limits failed: %s", response)
-        return
-
-    # 5. Write calibration positions to encoders
-    ser.timeout = 1
-    cmd = get_zero_calibrate_encoders_cmd()
-    print('5. Write encoder command: %s' % cmd)
-    ser.write(cmd)
-    response = parse_response(ser.readline())
-    if 'c,OK' == response:
-        print('Successfully set encoder counts.')
-    else:
-        print('Failed to set encoder counts: %s', response)
-        return
-
-    # 6. Set the rest position as the desired position
-    print('Moving to rest position.')
-    cmd = b'D,0,-1.6,0.05,0,0,0' + EOL
-    print('6. Set desired position command: %s' % cmd)
-    ser.write(cmd)
-    response = parse_response(ser.readline())
-    if 'd,OK' == response:
-        print('Successfully set desired positions.')
-    else:
-        print('Failed to set desired positions: %s', response)
-        return
-
-    # 7. Enable all control loops:
-    cmd = enable_control_loops(args.active_joints)
-    ser.write(cmd)
-    response = parse_response(ser.readline())
-    if 'x,OK' == response:
-        print('Enabled control loops')
-    else:
-        print('Failed to enable control loops')
-
-
+        # Enable all control loops
+        enable_control_loops(ser, [1, 2, 3, 4, 5, 6])
 
 if __name__ == '__main__':
-    calibrate()
+    main()
