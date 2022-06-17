@@ -6,16 +6,17 @@ from math import isclose
 EOL = b'\n'
 
 joint_info = {
-    1: {'letter': b'A', 'cal_dir': 0, 'neg_ang_lim': -170.0 , 'pos_ang_lim': 170.0 , 'step_lim': 15110, 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 7600, 'rest':  0.0},
-    2: {'letter': b'B', 'cal_dir': 0, 'neg_ang_lim': -129.6 , 'pos_ang_lim': 0.0   , 'step_lim': 7198 , 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 2139, 'rest': -1.6},
-    3: {'letter': b'C', 'cal_dir': 1, 'neg_ang_lim': +1.0   , 'pos_ang_lim': 143.7 , 'step_lim': 7984 , 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 7895, 'rest':  0.05},
-    4: {'letter': b'D', 'cal_dir': 0, 'neg_ang_lim': -164.5 , 'pos_ang_lim': 164.5 , 'step_lim': 14056, 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 7049, 'rest':  0.0},
-    5: {'letter': b'E', 'cal_dir': 0, 'neg_ang_lim': -107   , 'pos_ang_lim': 107   , 'step_lim': 4685 , 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 2343, 'rest':  0.0},
-    6: {'letter': b'F', 'cal_dir': 1, 'neg_ang_lim': -148.1 , 'pos_ang_lim': 148.1 , 'step_lim': 6320 , 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 3062, 'rest':  0.0}
+    1: {'cal_dir': 0, 'step_lim': 15110, 'rest':  0.0},
+    2: {'cal_dir': 0, 'step_lim': 7198 , 'rest': -1.6},
+    3: {'cal_dir': 1, 'step_lim': 7984 , 'rest':  0.05},
+    4: {'cal_dir': 0, 'step_lim': 14056, 'rest':  0.0},
+    5: {'cal_dir': 0, 'step_lim': 4685 , 'rest':  0.0},
+    6: {'cal_dir': 1, 'step_lim': 6320 , 'rest':  0.0}
 }
 
 def parse_response(response):
     return response.strip().decode("utf-8")
+
 
 def get_drive_to_limit_cmd(joints, speed):
     cmd = b'L,'
@@ -33,18 +34,20 @@ def get_drive_to_limit_cmd(joints, speed):
     cmd += EOL
     return cmd
 
+
 def get_zero_calibrate_encoders_cmd(joint_select):
     cmd = b'C,' + str(joint_select).encode('utf-8') + b','
 
     for key, joint in joint_info.items():
         if joint['cal_dir'] == 0:
-            joint['step_curr'] = 0
+            step_curr = 0
         else:
-            joint['step_curr'] = joint['step_lim']
-        cmd += str(joint['step_curr']).encode('utf-8') + b','
+            step_curr = joint['step_lim']
+        cmd += str(step_curr).encode('utf-8') + b','
 
     cmd += EOL
     return cmd
+
 
 def get_move_away_from_limits_cmd(joints):
     cmd = b'M,'
@@ -60,6 +63,7 @@ def get_move_away_from_limits_cmd(joints):
     cmd += EOL
     return cmd
 
+
 def get_joint_positions(ser):
     cmd = b'P' + EOL
     ser.write(cmd)
@@ -67,6 +71,7 @@ def get_joint_positions(ser):
     if len(positions) != 8:
         print('Error: Invalid joint position size.')
     return list(map(float, positions[1:7]))
+
 
 def wait_until_positions_reached(ser, active_joints, desired):
     active_select = [False if i+1 in active_joints else True for i in range(len(desired))]
@@ -94,6 +99,7 @@ def enable_control_loops_cmd(joints):
 
     cmd += EOL
     return cmd
+
 
 def enable_control_loops(ser, joints):
     cmd = enable_control_loops_cmd(joints)
@@ -185,6 +191,7 @@ def partial_calibrate(ser, active_joints):
     # 7. Enable all control loops:
     enable_control_loops(ser, active_joints)
 
+
 def main():
     parser = argparse.ArgumentParser(description='Calibrate the AR3 robot arm.')
     parser.add_argument('--joints', metavar='N', type=int, nargs='+',
@@ -225,6 +232,7 @@ def main():
 
         # Enable all control loops
         enable_control_loops(ser, [1, 2, 3, 4, 5, 6])
+
 
 if __name__ == '__main__':
     main()
