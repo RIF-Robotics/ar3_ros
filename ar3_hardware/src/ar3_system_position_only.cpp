@@ -144,7 +144,8 @@ CallbackReturn AR3SystemPositionOnlyHardware::on_deactivate(
   return CallbackReturn::SUCCESS;
 }
 
-hardware_interface::return_type AR3SystemPositionOnlyHardware::read()
+hardware_interface::return_type AR3SystemPositionOnlyHardware::read(
+  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
   // Read the encoder counts
   if (not comm_.get_joint_positions(hw_states_)) {
@@ -156,7 +157,8 @@ hardware_interface::return_type AR3SystemPositionOnlyHardware::read()
   return hardware_interface::return_type::OK;
 }
 
-hardware_interface::return_type AR3SystemPositionOnlyHardware::write()
+hardware_interface::return_type AR3SystemPositionOnlyHardware::write(
+  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
   comm_.set_joint_positions(hw_commands_);
   return hardware_interface::return_type::OK;

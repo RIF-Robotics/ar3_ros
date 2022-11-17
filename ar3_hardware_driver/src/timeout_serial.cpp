@@ -22,7 +22,7 @@
 #include <string>
 #include <algorithm>
 #include <iostream>
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 
 #include "ar3_hardware_driver/timeout_serial.h"
 
