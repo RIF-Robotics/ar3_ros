@@ -9,7 +9,7 @@
   <xacro:arg name="firmware_version" default="" />
 
   <!-- Simulation arguments -->
-  <xacro:arg name="use_sim" default="false" />
+  <xacro:arg name="sim_gazebo" default="false" />
   <xacro:arg name="use_fake_hardware" default="false"/>
   <xacro:arg name="fake_sensor_commands" default="false"/>
 
@@ -43,7 +43,7 @@
       serial_device="$(arg serial_device)"
       serial_baudrate="$(arg serial_baudrate)"
       firmware_version="$(arg firmware_version)"
-      use_sim="$(arg use_sim)"
+      sim_gazebo="$(arg sim_gazebo)"
       use_fake_hardware="$(arg use_fake_hardware)"
       fake_sensor_commands="$(arg fake_sensor_commands)"
       />

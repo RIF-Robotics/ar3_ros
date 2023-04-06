@@ -27,3 +27,9 @@ communicate with the real AR3 robot arm.
 ## Connect ROS2 to Physical AR3
 
     $ ros2 launch ar3_bringup ar3_base.launch.py
+
+## MoveIt2 Control
+
+See the
+[ar3_moveit2_config](https://github.com/RIF-Robotics/ar3_moveit2_config)
+package for how to use MoveIt2 to control the AR3.
