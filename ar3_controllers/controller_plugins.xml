@@ -1,0 +1,7 @@
+<library path="ar3_controllers">
+  <class name="ar3_controllers/StatusController" type="ar3_controllers::StatusController" base_class_type="controller_interface::ControllerInterface">
+    <description>
+      This controller publishes AR3 status.
+    </description>
+  </class>
+</library>

@@ -111,6 +111,9 @@ AR3SystemPositionOnlyHardware::export_state_interfaces()
       info_.joints[i].name, hardware_interface::HW_IF_POSITION, &hw_states_[i]));
   }
 
+  state_interfaces.emplace_back(hardware_interface::StateInterface("status", "encoder_count_error", &encoder_count_error_));
+  state_interfaces.emplace_back(hardware_interface::StateInterface("status", "limit_switch_triggered", &limit_switch_triggered_));
+
   return state_interfaces;
 }
 
@@ -145,15 +148,30 @@ CallbackReturn AR3SystemPositionOnlyHardware::on_deactivate(
 }
 
 hardware_interface::return_type AR3SystemPositionOnlyHardware::read(
-  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
+  const rclcpp::Time & time, const rclcpp::Duration & /*period*/)
 {
   // Read the encoder counts
   if (not comm_.get_joint_positions(hw_states_)) {
     RCLCPP_FATAL(
         rclcpp::get_logger("AR3SystemPositionOnlyHardware"),
         "Failed to read joint positions");
-
   }
+
+  double now = time.seconds();
+  if ((last_status_read_time_ + status_read_period_) < now)
+  {
+    std::vector<unsigned int> status_bits(2);
+    if (not comm_.get_status_bits(status_bits)) {
+      RCLCPP_FATAL(
+          rclcpp::get_logger("AR3SystemPositionOnlyHardware"),
+          "Failed to read status bits.");
+    } else {
+      encoder_count_error_ = static_cast<double>(status_bits[0]);
+      limit_switch_triggered_ = static_cast<double>(status_bits[1]);
+    }
+    last_status_read_time_ = now;
+  }
+
   return hardware_interface::return_type::OK;
 }
 

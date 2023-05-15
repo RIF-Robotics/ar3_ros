@@ -27,6 +27,9 @@ class AR3EncoderSwitchMotorSerialComm
   bool get_joint_positions(std::vector<double>& joint_positions);
 
   AR3_HARDWARE_DRIVER_PUBLIC
+  bool get_status_bits(std::vector<unsigned int>& status_bits);
+
+  AR3_HARDWARE_DRIVER_PUBLIC
   bool set_joint_positions(const std::vector<double>& desired_joint_positions);
 
   AR3_HARDWARE_DRIVER_PUBLIC

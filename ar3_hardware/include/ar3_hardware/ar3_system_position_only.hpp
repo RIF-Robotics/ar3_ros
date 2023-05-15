@@ -69,6 +69,12 @@ private:
   std::vector<double> hw_commands_;
   std::vector<double> hw_states_;
 
+  double encoder_count_error_{0};
+  double limit_switch_triggered_{0};
+
+  double status_read_period_{1.0};
+  double last_status_read_time_{0.0};
+
   std::string serial_device_;
   int serial_baudrate_;
   std::string firmware_version_;

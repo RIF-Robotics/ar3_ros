@@ -11,6 +11,9 @@ controller_manager:
     joint_trajectory_controller:
       type: joint_trajectory_controller/JointTrajectoryController
 
+    status_controller:
+      type: ar3_controllers/StatusController
+
 
 forward_position_controller:
   ros__parameters:

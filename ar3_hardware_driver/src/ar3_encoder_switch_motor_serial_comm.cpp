@@ -73,6 +73,21 @@ bool AR3EncoderSwitchMotorSerialComm::get_joint_positions(std::vector<double>& j
   return parse_list(jp_result, ",", joint_positions.size()+1, joint_positions);
 }
 
+bool AR3EncoderSwitchMotorSerialComm::get_status_bits(std::vector<unsigned int>& status_bits)
+{
+  // Request the joint encoder counts
+  serial_->writeString("Q\r\n");
+  std::string status_result;
+  try {
+    status_result = serial_->readStringUntil("\r\n");
+  } catch (const timeout_exception& e) {
+    std::cout << "Timeout!" << std::endl;
+  } catch (const boost::system::system_error& e) {
+    std::cout << "Exception: " << e.what() << std::endl;
+  }
+  return parse_list(status_result, ",", 3, status_bits);
+}
+
 bool AR3EncoderSwitchMotorSerialComm::set_joint_positions(const std::vector<double>& desired_joint_positions)
 {
   std::string cmd = "D,";
