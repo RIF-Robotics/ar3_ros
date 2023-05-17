@@ -26,7 +26,6 @@ forward_position_controller:
       - joint6
     interface_name: position
 
-
 position_trajectory_controller:
   ros__parameters:
     joints:
@@ -69,3 +68,5 @@ joint_trajectory_controller:
 
     state_interfaces:
       - position
+
+    open_loop_control: false
