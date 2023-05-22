@@ -1,2 +1,4 @@
 bool encoder_count_error
 bool limit_switch_triggered
+
+bool[] limit_switches_triggered

@@ -11,13 +11,19 @@ find_package(controller_interface REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(ar3_msgs REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
+find_package(generate_parameter_library REQUIRED)
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   ar3_msgs
   controller_interface
   pluginlib
   rclcpp_lifecycle
+  generate_parameter_library
   )
+
+generate_parameter_library(status_controller_parameters
+  src/status_controller_parameters.yaml
+)
 
 include_directories(include)
 
@@ -27,6 +33,10 @@ add_library(${PROJECT_NAME} SHARED
 target_include_directories(${PROJECT_NAME} PRIVATE
   include
   )
+
+target_link_libraries(${PROJECT_NAME}
+  status_controller_parameters
+)
 
 ament_target_dependencies(${PROJECT_NAME}
   ${THIS_PACKAGE_INCLUDE_DEPENDS}

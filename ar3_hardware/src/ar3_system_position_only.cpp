@@ -39,6 +39,7 @@ CallbackReturn AR3SystemPositionOnlyHardware::on_init(
 
   hw_states_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
   hw_commands_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
+  limit_switches_triggered_.resize(info_.joints.size(), 0);
 
   for (const hardware_interface::ComponentInfo & joint : info_.joints)
   {
@@ -114,6 +115,12 @@ AR3SystemPositionOnlyHardware::export_state_interfaces()
   state_interfaces.emplace_back(hardware_interface::StateInterface("status", "encoder_count_error", &encoder_count_error_));
   state_interfaces.emplace_back(hardware_interface::StateInterface("status", "limit_switch_triggered", &limit_switch_triggered_));
 
+  for (uint i = 0; i < info_.joints.size(); i++)
+  {
+    state_interfaces.emplace_back(hardware_interface::StateInterface(
+        info_.joints[i].name, "limit_switch", &limit_switches_triggered_[i]));
+  }
+
   return state_interfaces;
 }
 
@@ -168,6 +175,15 @@ hardware_interface::return_type AR3SystemPositionOnlyHardware::read(
     } else {
       encoder_count_error_ = static_cast<double>(status_bits[0]);
       limit_switch_triggered_ = static_cast<double>(status_bits[1]);
+
+      // Only read the limit switches if the error is present
+      if (limit_switch_triggered_ > 0) {
+        if (not comm_.get_limit_switch_rising_edges(limit_switches_triggered_)) {
+          RCLCPP_FATAL(
+              rclcpp::get_logger("AR3SystemPositionOnlyHardware"),
+              "Failed to read status bits.");
+        }
+      }
     }
     last_status_read_time_ = now;
   }

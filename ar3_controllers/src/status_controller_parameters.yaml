@@ -1,0 +1,22 @@
+status_controller:
+  use_local_topics: {
+    type: bool,
+    default_value: false,
+  }
+  joints: {
+    type: string_array,
+    default_value: [],
+  }
+  extra_joints: {
+    type: string_array,
+    default_value: [],
+  }
+  interfaces: {
+    type: string_array,
+    default_value: [],
+  }
+  map_interface_to_joint_state:
+    limit_switch: {
+      type: string,
+      default_value: "limit_switch",
+    }

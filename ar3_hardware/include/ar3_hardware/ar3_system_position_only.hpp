@@ -71,6 +71,7 @@ private:
 
   double encoder_count_error_{0};
   double limit_switch_triggered_{0};
+  std::vector<double> limit_switches_triggered_;
 
   double status_read_period_{1.0};
   double last_status_read_time_{0.0};

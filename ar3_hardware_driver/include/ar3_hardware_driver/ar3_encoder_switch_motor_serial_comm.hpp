@@ -30,6 +30,9 @@ class AR3EncoderSwitchMotorSerialComm
   bool get_status_bits(std::vector<unsigned int>& status_bits);
 
   AR3_HARDWARE_DRIVER_PUBLIC
+  bool get_limit_switch_rising_edges(std::vector<double>& limit_switches);
+
+  AR3_HARDWARE_DRIVER_PUBLIC
   bool set_joint_positions(const std::vector<double>& desired_joint_positions);
 
   AR3_HARDWARE_DRIVER_PUBLIC
