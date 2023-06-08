@@ -67,6 +67,6 @@ private:
   bool send_command(const std::string & cmd, std::string & response);
 };
 
-}  // ar3_hardware_driver
+}  // namespace ar3_hardware_driver
 
 #endif  // AR3_HARDWARE_DRIVER__AR3_ENCODER_SWITCH_MOTOR_SERIAL_COMM_HPP_
