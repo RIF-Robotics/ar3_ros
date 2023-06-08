@@ -28,7 +28,7 @@ target_include_directories(
   ${PROJECT_NAME}
   PRIVATE
   include
-  )
+)
 ament_target_dependencies(
   ${PROJECT_NAME}
   hardware_interface
@@ -36,7 +36,7 @@ ament_target_dependencies(
   rclcpp
   rclcpp_lifecycle
   ar3_hardware_driver
-  )
+)
 
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
@@ -56,17 +56,17 @@ install(
 install(
   DIRECTORY include/
   DESTINATION include
-  )
+)
 
 if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  # the following line skips the linter which checks for copyrights
-  # uncomment the line when a copyright and license is not present in all source files
-  #set(ament_cmake_copyright_FOUND TRUE)
-  # the following line skips cpplint (only works in a git repo)
-  # uncomment the line when this package is not in a git repo
-  #set(ament_cmake_cpplint_FOUND TRUE)
-  ament_lint_auto_find_test_dependencies()
+  find_package(ament_cmake_clang_format REQUIRED)
+  ament_clang_format()
+
+  find_package(ament_cmake_xmllint REQUIRED)
+  ament_xmllint()
+
+  find_package(ament_cmake_lint_cmake REQUIRED)
+  ament_lint_cmake()
 endif()
 
 ## EXPORTS

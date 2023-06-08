@@ -6,7 +6,7 @@ find_package(ament_cmake REQUIRED)
 
 install(DIRECTORY config gazebo meshes ros2_control urdf
   DESTINATION share/${PROJECT_NAME}/
-  )
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

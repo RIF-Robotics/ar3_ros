@@ -19,6 +19,8 @@
 #include <string>
 #include <vector>
 
+#include "ar3_hardware/visibility_control.h"
+#include "ar3_hardware_driver/ar3_encoder_switch_motor_serial_comm.hpp"
 #include "hardware_interface/handle.hpp"
 #include "hardware_interface/hardware_info.hpp"
 #include "hardware_interface/system_interface.hpp"
@@ -26,8 +28,6 @@
 #include "rclcpp/macros.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
-#include "ar3_hardware/visibility_control.h"
-#include "ar3_hardware_driver/ar3_encoder_switch_motor_serial_comm.hpp"
 
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
@@ -81,7 +81,6 @@ private:
   std::string firmware_version_;
 
   ar3_hardware_driver::AR3EncoderSwitchMotorSerialComm comm_;
-
 };
 
 }  // namespace ar3_hardware

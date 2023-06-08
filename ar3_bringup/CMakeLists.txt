@@ -13,6 +13,23 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 
+if(BUILD_TESTING)
+  find_package(ament_cmake_xmllint REQUIRED)
+  ament_xmllint()
+
+  find_package(ament_cmake_flake8 REQUIRED)
+  ament_flake8()
+
+  find_package(ament_cmake_pep257 REQUIRED)
+  ament_pep257()
+
+  find_package(ament_cmake_mypy REQUIRED)
+  ament_mypy()
+
+  find_package(ament_cmake_lint_cmake REQUIRED)
+  ament_lint_cmake()
+endif()
+
 ament_package()
 
 install(
