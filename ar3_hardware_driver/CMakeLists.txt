@@ -19,37 +19,37 @@ add_library(
   timeout_serial
   SHARED
   src/timeout_serial.cpp
-  )
+)
 target_include_directories(timeout_serial
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
-  )
+)
 
 ament_target_dependencies(
   timeout_serial
   rclcpp
-  )
+)
 
 # Comm protocol to Arduino
 add_library(
   ${PROJECT_NAME}
   SHARED
   src/ar3_encoder_switch_motor_serial_comm.cpp
-  )
+)
 target_include_directories(
   ${PROJECT_NAME}
   PRIVATE
   include
-  )
+)
 target_link_libraries(
   ${PROJECT_NAME}
   timeout_serial
-  )
+)
 ament_target_dependencies(
   ${PROJECT_NAME}
   rclcpp
-  )
+)
 
 # INSTALL
 install(
@@ -59,7 +59,7 @@ install(
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION bin
   INCLUDES DESTINATION include
-  )
+)
 
 # INSTALL
 install(
@@ -74,17 +74,26 @@ install(
 install(
   DIRECTORY include/
   DESTINATION include
-  )
+)
 
 if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  # the following line skips the linter which checks for copyrights
-  # uncomment the line when a copyright and license is not present in all source files
-  #set(ament_cmake_copyright_FOUND TRUE)
-  # the following line skips cpplint (only works in a git repo)
-  # uncomment the line when this package is not in a git repo
-  #set(ament_cmake_cpplint_FOUND TRUE)
-  ament_lint_auto_find_test_dependencies()
+  find_package(ament_cmake_clang_format REQUIRED)
+  ament_clang_format()
+
+  find_package(ament_cmake_xmllint REQUIRED)
+  ament_xmllint()
+
+  find_package(ament_cmake_flake8 REQUIRED)
+  ament_flake8()
+
+  find_package(ament_cmake_pep257 REQUIRED)
+  ament_pep257()
+
+  find_package(ament_cmake_mypy REQUIRED)
+  ament_mypy()
+
+  find_package(ament_cmake_lint_cmake REQUIRED)
+  ament_lint_cmake()
 endif()
 
 # Serial Library Exports
@@ -94,12 +103,12 @@ ament_export_targets(${PROJECT_NAME}Targets HAS_LIBRARY_TARGET)
 ## EXPORTS
 ament_export_include_directories(
   include
-  )
+)
 #ament_export_libraries(
 #  ${PROJECT_NAME}
 #  )
 ament_export_dependencies(
   rclcpp
-  )
+)
 
 ament_package()

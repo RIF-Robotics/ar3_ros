@@ -25,11 +25,9 @@
 
 namespace ar3_hardware
 {
-CallbackReturn AR3SystemPositionOnlyHardware::on_init(
-  const hardware_interface::HardwareInfo & info)
+CallbackReturn AR3SystemPositionOnlyHardware::on_init(const hardware_interface::HardwareInfo & info)
 {
-  if (hardware_interface::SystemInterface::on_init(info) != CallbackReturn::SUCCESS)
-  {
+  if (hardware_interface::SystemInterface::on_init(info) != CallbackReturn::SUCCESS) {
     return CallbackReturn::ERROR;
   }
 
@@ -41,11 +39,9 @@ CallbackReturn AR3SystemPositionOnlyHardware::on_init(
   hw_commands_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
   limit_switches_triggered_.resize(info_.joints.size(), 0);
 
-  for (const hardware_interface::ComponentInfo & joint : info_.joints)
-  {
+  for (const hardware_interface::ComponentInfo & joint : info_.joints) {
     // AR3SystemPositionOnly has exactly one state and command interface on each joint
-    if (joint.command_interfaces.size() != 1)
-    {
+    if (joint.command_interfaces.size() != 1) {
       RCLCPP_FATAL(
         rclcpp::get_logger("AR3SystemPositionOnlyHardware"),
         "Joint '%s' has %zu command interfaces found. 1 expected.", joint.name.c_str(),
@@ -53,8 +49,7 @@ CallbackReturn AR3SystemPositionOnlyHardware::on_init(
       return CallbackReturn::ERROR;
     }
 
-    if (joint.command_interfaces[0].name != hardware_interface::HW_IF_POSITION)
-    {
+    if (joint.command_interfaces[0].name != hardware_interface::HW_IF_POSITION) {
       RCLCPP_FATAL(
         rclcpp::get_logger("AR3SystemPositionOnlyHardware"),
         "Joint '%s' have %s command interfaces found. '%s' expected.", joint.name.c_str(),
@@ -62,8 +57,7 @@ CallbackReturn AR3SystemPositionOnlyHardware::on_init(
       return CallbackReturn::ERROR;
     }
 
-    if (joint.state_interfaces.size() != 1)
-    {
+    if (joint.state_interfaces.size() != 1) {
       RCLCPP_FATAL(
         rclcpp::get_logger("AR3SystemPositionOnlyHardware"),
         "Joint '%s' has %zu state interface. 1 expected.", joint.name.c_str(),
@@ -71,8 +65,7 @@ CallbackReturn AR3SystemPositionOnlyHardware::on_init(
       return CallbackReturn::ERROR;
     }
 
-    if (joint.state_interfaces[0].name != hardware_interface::HW_IF_POSITION)
-    {
+    if (joint.state_interfaces[0].name != hardware_interface::HW_IF_POSITION) {
       RCLCPP_FATAL(
         rclcpp::get_logger("AR3SystemPositionOnlyHardware"),
         "Joint '%s' have %s state interface. '%s' expected.", joint.name.c_str(),
@@ -87,11 +80,12 @@ CallbackReturn AR3SystemPositionOnlyHardware::on_init(
 CallbackReturn AR3SystemPositionOnlyHardware::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  if (not comm_.init(serial_device_, serial_baudrate_, firmware_version_))
-  {
-    RCLCPP_ERROR(rclcpp::get_logger("AR3SystemPositionOnlyHardware"),
-                 "Failed to initialize serial comm with the following parameters:\nserial_device=%s\nserial_baudrate=%d\nfirmware_version=%s",
-                 serial_device_.c_str(), serial_baudrate_, firmware_version_.c_str());
+  if (not comm_.init(serial_device_, serial_baudrate_, firmware_version_)) {
+    RCLCPP_ERROR(
+      rclcpp::get_logger("AR3SystemPositionOnlyHardware"),
+      "Failed to initialize serial comm with the following "
+      "parameters:\nserial_device=%s\nserial_baudrate=%d\nfirmware_version=%s",
+      serial_device_.c_str(), serial_baudrate_, firmware_version_.c_str());
     return CallbackReturn::FAILURE;
   }
 
@@ -106,19 +100,19 @@ std::vector<hardware_interface::StateInterface>
 AR3SystemPositionOnlyHardware::export_state_interfaces()
 {
   std::vector<hardware_interface::StateInterface> state_interfaces;
-  for (uint i = 0; i < info_.joints.size(); i++)
-  {
+  for (uint i = 0; i < info_.joints.size(); i++) {
     state_interfaces.emplace_back(hardware_interface::StateInterface(
       info_.joints[i].name, hardware_interface::HW_IF_POSITION, &hw_states_[i]));
   }
 
-  state_interfaces.emplace_back(hardware_interface::StateInterface("status", "encoder_count_error", &encoder_count_error_));
-  state_interfaces.emplace_back(hardware_interface::StateInterface("status", "limit_switch_triggered", &limit_switch_triggered_));
+  state_interfaces.emplace_back(
+    hardware_interface::StateInterface("status", "encoder_count_error", &encoder_count_error_));
+  state_interfaces.emplace_back(hardware_interface::StateInterface(
+    "status", "limit_switch_triggered", &limit_switch_triggered_));
 
-  for (uint i = 0; i < info_.joints.size(); i++)
-  {
+  for (uint i = 0; i < info_.joints.size(); i++) {
     state_interfaces.emplace_back(hardware_interface::StateInterface(
-        info_.joints[i].name, "limit_switch", &limit_switches_triggered_[i]));
+      info_.joints[i].name, "limit_switch", &limit_switches_triggered_[i]));
   }
 
   return state_interfaces;
@@ -128,8 +122,7 @@ std::vector<hardware_interface::CommandInterface>
 AR3SystemPositionOnlyHardware::export_command_interfaces()
 {
   std::vector<hardware_interface::CommandInterface> command_interfaces;
-  for (uint i = 0; i < info_.joints.size(); i++)
-  {
+  for (uint i = 0; i < info_.joints.size(); i++) {
     command_interfaces.emplace_back(hardware_interface::CommandInterface(
       info_.joints[i].name, hardware_interface::HW_IF_POSITION, &hw_commands_[i]));
   }
@@ -141,8 +134,7 @@ CallbackReturn AR3SystemPositionOnlyHardware::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   // command and state should be equal when starting
-  for (uint i = 0; i < hw_states_.size(); i++)
-  {
+  for (uint i = 0; i < hw_states_.size(); i++) {
     hw_commands_[i] = hw_states_[i];
   }
   return CallbackReturn::SUCCESS;
@@ -160,18 +152,15 @@ hardware_interface::return_type AR3SystemPositionOnlyHardware::read(
   // Read the encoder counts
   if (not comm_.get_joint_positions(hw_states_)) {
     RCLCPP_FATAL(
-        rclcpp::get_logger("AR3SystemPositionOnlyHardware"),
-        "Failed to read joint positions");
+      rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Failed to read joint positions");
   }
 
   double now = time.seconds();
-  if ((last_status_read_time_ + status_read_period_) < now)
-  {
+  if ((last_status_read_time_ + status_read_period_) < now) {
     std::vector<unsigned int> status_bits(2);
     if (not comm_.get_status_bits(status_bits)) {
       RCLCPP_FATAL(
-          rclcpp::get_logger("AR3SystemPositionOnlyHardware"),
-          "Failed to read status bits.");
+        rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Failed to read status bits.");
     } else {
       encoder_count_error_ = static_cast<double>(status_bits[0]);
       limit_switch_triggered_ = static_cast<double>(status_bits[1]);
@@ -180,8 +169,7 @@ hardware_interface::return_type AR3SystemPositionOnlyHardware::read(
       if (limit_switch_triggered_ > 0) {
         if (not comm_.get_limit_switch_rising_edges(limit_switches_triggered_)) {
           RCLCPP_FATAL(
-              rclcpp::get_logger("AR3SystemPositionOnlyHardware"),
-              "Failed to read status bits.");
+            rclcpp::get_logger("AR3SystemPositionOnlyHardware"), "Failed to read status bits.");
         }
       }
     }

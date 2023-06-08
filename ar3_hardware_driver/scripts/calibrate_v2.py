@@ -1,18 +1,18 @@
 import serial
-import io
 import argparse
 from math import isclose
 
 EOL = b'\n'
 
 joint_info = {
-    1: {'cal_dir': 0, 'step_lim': 15110, 'rest':  0.0},
-    2: {'cal_dir': 0, 'step_lim': 7198 , 'rest': -1.6},
-    3: {'cal_dir': 1, 'step_lim': 7984 , 'rest':  0.05},
-    4: {'cal_dir': 0, 'step_lim': 14056, 'rest':  0.0},
-    5: {'cal_dir': 0, 'step_lim': 4685 , 'rest':  0.0},
-    6: {'cal_dir': 1, 'step_lim': 6320 , 'rest':  0.0}
+    1: {'cal_dir': 0, 'step_lim': 15110, 'rest': 0.0},
+    2: {'cal_dir': 0, 'step_lim': 7198, 'rest': -1.6},
+    3: {'cal_dir': 1, 'step_lim': 7984, 'rest': 0.05},
+    4: {'cal_dir': 0, 'step_lim': 14056, 'rest': 0.0},
+    5: {'cal_dir': 0, 'step_lim': 4685, 'rest': 0.0},
+    6: {'cal_dir': 1, 'step_lim': 6320, 'rest': 0.0}
 }
+
 
 def parse_response(response):
     return response.strip().decode("utf-8")
@@ -74,7 +74,7 @@ def get_joint_positions(ser):
 
 
 def wait_until_positions_reached(ser, active_joints, desired):
-    active_select = [False if i+1 in active_joints else True for i in range(len(desired))]
+    active_select = [False if i + 1 in active_joints else True for i in range(len(desired))]
 
     not_reached = True
     while not_reached:
@@ -82,8 +82,7 @@ def wait_until_positions_reached(ser, active_joints, desired):
         print('Desired: ', desired)
         print('Current: ', current)
 
-        joints_reached = [isclose(n0, n1, abs_tol = 0.01)
-                          for n0, n1 in zip(desired, current)]
+        joints_reached = [isclose(n0, n1, abs_tol=0.01) for n0, n1 in zip(desired, current)]
 
         not_reached = not all(i or j for i, j in zip(active_select, joints_reached))
 
@@ -114,7 +113,7 @@ def enable_control_loops(ser, joints):
 
 def partial_calibrate(ser, active_joints):
     # Create the bit select for the active joints
-    joint_select = sum([1 << (x-1) for x in active_joints])
+    joint_select = sum([1 << (x - 1) for x in active_joints])
 
     # Set a long timeout during the calibration movement
     ser.timeout = 60
@@ -177,7 +176,7 @@ def partial_calibrate(ser, active_joints):
     print('Moving to rest position.')
 
     rest_positions_str = ','.join([str(info['rest']) for _, info in joint_info.items()])
-    #cmd = b'D,0,-1.6,0.05,0,0,0' + EOL
+    # cmd = b'D,0,-1.6,0.05,0,0,0' + EOL
     cmd = b'D,' + rest_positions_str.encode('utf-8') + EOL
     print('6. Set desired position command: %s' % cmd)
     ser.write(cmd)
@@ -205,7 +204,7 @@ def main():
                         stopbits=serial.STOPBITS_ONE, timeout=1)
 
     # Check the firmware version
-    ser.write(b'V'+EOL)
+    ser.write(b'V' + EOL)
     if parse_response(ser.readline()) != firmware_version:
         print('Serial comms not working.')
         return

@@ -19,7 +19,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   pluginlib
   rclcpp_lifecycle
   generate_parameter_library
-  )
+)
 
 generate_parameter_library(status_controller_parameters
   src/status_controller_parameters.yaml
@@ -32,7 +32,7 @@ add_library(${PROJECT_NAME} SHARED
 
 target_include_directories(${PROJECT_NAME} PRIVATE
   include
-  )
+)
 
 target_link_libraries(${PROJECT_NAME}
   status_controller_parameters
@@ -40,7 +40,7 @@ target_link_libraries(${PROJECT_NAME}
 
 ament_target_dependencies(${PROJECT_NAME}
   ${THIS_PACKAGE_INCLUDE_DEPENDS}
-  )
+)
 
 # prevent pluginlib from using boost
 target_compile_definitions(${PROJECT_NAME} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
@@ -58,7 +58,7 @@ install(DIRECTORY include/
 
 install(FILES controller_plugins.xml
   DESTINATION share/${PROJECT_NAME}
-  )
+)
 
 ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
 ament_export_include_directories(include)
@@ -73,15 +73,14 @@ ament_export_libraries(
 )
 
 if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  # the following line skips the linter which checks for copyrights
-  # comment the line when a copyright and license is added to all source files
-  set(ament_cmake_copyright_FOUND TRUE)
-  # the following line skips cpplint (only works in a git repo)
-  # comment the line when this package is in a git repo and when
-  # a copyright and license is added to all source files
-  set(ament_cmake_cpplint_FOUND TRUE)
-  ament_lint_auto_find_test_dependencies()
+  find_package(ament_cmake_clang_format REQUIRED)
+  ament_clang_format()
+
+  find_package(ament_cmake_xmllint REQUIRED)
+  ament_xmllint()
+
+  find_package(ament_cmake_lint_cmake REQUIRED)
+  ament_lint_cmake()
 endif()
 
 ament_package()

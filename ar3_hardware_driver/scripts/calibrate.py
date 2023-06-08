@@ -1,17 +1,23 @@
 import serial
-import io
 import argparse
 
 EOL = b'\r\n'
 
 joint_info = {
-    1: {'letter': b'A', 'cal_dir': 0, 'neg_ang_lim': -170.0 , 'pos_ang_lim': 170.0 , 'step_lim': 15110, 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 7600},
-    2: {'letter': b'B', 'cal_dir': 0, 'neg_ang_lim': -129.6 , 'pos_ang_lim': 0.0   , 'step_lim': 7198 , 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 2139},
-    3: {'letter': b'C', 'cal_dir': 1, 'neg_ang_lim': +1.0   , 'pos_ang_lim': 143.7 , 'step_lim': 7984 , 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 7895},
-    4: {'letter': b'D', 'cal_dir': 0, 'neg_ang_lim': -164.5 , 'pos_ang_lim': 164.5 , 'step_lim': 14056, 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 7049},
-    5: {'letter': b'E', 'cal_dir': 0, 'neg_ang_lim': -104.15, 'pos_ang_lim': 104.15, 'step_lim': 4560 , 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 887},
-    6: {'letter': b'F', 'cal_dir': 1, 'neg_ang_lim': -148.1 , 'pos_ang_lim': 148.1 , 'step_lim': 6320 , 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 3062}
+    1: {'letter': b'A', 'cal_dir': 0, 'neg_ang_lim': -170.0, 'pos_ang_lim': 170.0,
+        'step_lim': 15110, 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 7600},
+    2: {'letter': b'B', 'cal_dir': 0, 'neg_ang_lim': -129.6, 'pos_ang_lim': 0.0,
+        'step_lim': 7198, 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 2139},
+    3: {'letter': b'C', 'cal_dir': 1, 'neg_ang_lim': +1.0, 'pos_ang_lim': 143.7,
+        'step_lim': 7984, 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 7895},
+    4: {'letter': b'D', 'cal_dir': 0, 'neg_ang_lim': -164.5, 'pos_ang_lim': 164.5,
+        'step_lim': 14056, 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 7049},
+    5: {'letter': b'E', 'cal_dir': 0, 'neg_ang_lim': -104.15, 'pos_ang_lim': 104.15,
+        'step_lim': 4560, 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 887},
+    6: {'letter': b'F', 'cal_dir': 1, 'neg_ang_lim': -148.1, 'pos_ang_lim': 148.1,
+        'step_lim': 6320, 'step_curr': 0, 'angle_curr': 0.0, 'rest_count': 3062}
 }
+
 
 def parse_response(response):
     return response.strip().decode("utf-8")
@@ -33,6 +39,7 @@ def get_drive_to_limit_cmd(joints, speed):
     cmd += EOL
     return cmd
 
+
 def get_zero_calibrate_encoders_cmd():
     cmd = b'LM'
 
@@ -43,6 +50,7 @@ def get_zero_calibrate_encoders_cmd():
 
     cmd += EOL
     return cmd
+
 
 def get_move_away_from_limits_cmd(joints):
     cmd = b'MJ'
@@ -58,6 +66,7 @@ def get_move_away_from_limits_cmd(joints):
 
     cmd += EOL
     return cmd
+
 
 def get_rest_position_cmd(joints):
     cmd = b'MJ'
@@ -160,7 +169,6 @@ def calibrate():
     ser.write(cmd)
     result = parse_response(ser.readline())
     print('MJ response: ', result)
-
 
 
 if __name__ == '__main__':
