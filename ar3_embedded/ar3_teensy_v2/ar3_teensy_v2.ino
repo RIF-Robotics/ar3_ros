@@ -109,7 +109,7 @@ const float J6encMult = 5.12;
 const float EncDiv = .1;
 const float encoder_mults[] = {J1encMult, J2encMult, J3encMult, J4encMult, J5encMult, J6encMult};
 
-unsigned long time = 0;
+unsigned long curr_time = 0;
 unsigned long prev_print_time[] = {0, 0, 0, 0, 0, 0};
 unsigned long time_unit = 1000000;
 int one_second = 1 * time_unit;
@@ -240,7 +240,7 @@ void setup()
 void loop()
 {
   // TODO: Handle clock rollover
-  time = micros();
+  curr_time = micros();
 
   update_limit_switch_states();
 
@@ -499,10 +499,10 @@ void control_loop_motor_steps()
         prev_desired_motor_dirs[i] = desired_motor_dirs[i];
 
         next_state[i] = SET_DIRECTION_DELAY;
-        delay_until[i] = time + bit_delay;
+        delay_until[i] = curr_time + bit_delay;
         break;
       case SET_DIRECTION_DELAY:
-        if (time >= delay_until[i]) {
+        if (curr_time >= delay_until[i]) {
           next_state[i] = TOGGLE_STEP_LOW;
         }
         break;
@@ -525,20 +525,20 @@ void control_loop_motor_steps()
         }
 
         next_state[i] = TOGGLE_STEP_LOW_DELAY;
-        delay_until[i] = time + bit_delay;
+        delay_until[i] = curr_time + bit_delay;
         break;
       case TOGGLE_STEP_LOW_DELAY:
-        if (time >= delay_until[i]) {
+        if (curr_time >= delay_until[i]) {
           next_state[i] = TOGGLE_STEP_HIGH;
         }
         break;
       case TOGGLE_STEP_HIGH:
         digitalWrite(step_pins[i], HIGH);
         next_state[i] = TOGGLE_STEP_HIGH_DELAY;
-        delay_until[i] = time + bit_delay;
+        delay_until[i] = curr_time + bit_delay;
         break;
       case TOGGLE_STEP_HIGH_DELAY:
-        if (time >= delay_until[i]) {
+        if (curr_time >= delay_until[i]) {
           if (desired_motor_steps[i] > 0) {
             next_state[i] = TOGGLE_STEP_LOW;
           } else {
@@ -602,10 +602,10 @@ void update_limit_switch_states()
   for (unsigned int i = 0; i < NUM_JOINTS; ++i) {
     int reading = digitalRead(limit_switches[i]);
     if (reading != last_limit_switch_states[i]) {
-      last_debounce_times[i] = time;
+      last_debounce_times[i] = curr_time;
     }
 
-    if (time - last_debounce_times[i] > debounce_delay) {
+    if (curr_time - last_debounce_times[i] > debounce_delay) {
       // if the limit switch state has changed:
       if (reading != limit_switch_states[i]) {
         // if the limit switch has changed from LOW to HIGH, disable all
@@ -635,8 +635,8 @@ void update_limit_switch_states()
 void print_debug_loop(unsigned long period, unsigned int i)
 {
   // Print in loop example
-  if (time - prev_print_time[i] > period) {
-    Serial << "------- " << time << "\n";
+  if (curr_time - prev_print_time[i] > period) {
+    Serial << "------- " << curr_time << "\n";
     Serial << "Joint: " << i+1 << "\n";
     Serial << "Control Loop Enabled: " << enable_control_loop[i] << "\n";
     Serial << "State: " << current_state[i] << "\n";
@@ -647,7 +647,7 @@ void print_debug_loop(unsigned long period, unsigned int i)
     Serial << "desired_motor_dir: " << desired_motor_dirs[i] << "\n";
     Serial << "Current Motor Direction: " << digitalRead(dir_pins[i]) << "\n";
     Serial << "joint_positions_err_rad: " << joint_positions_err_rad[i] << "\n";
-    prev_print_time[i] = time;
+    prev_print_time[i] = curr_time;
   }
 }
 

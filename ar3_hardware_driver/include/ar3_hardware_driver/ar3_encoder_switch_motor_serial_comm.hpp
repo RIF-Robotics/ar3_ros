@@ -60,6 +60,8 @@ class AR3EncoderSwitchMotorSerialComm
     }
     return true;
   }
+
+  bool send_command(const std::string& cmd, std::string& response);
 };
 
 }  // ar3_hardware_driver

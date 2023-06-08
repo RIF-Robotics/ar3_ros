@@ -23,11 +23,14 @@ bool AR3EncoderSwitchMotorSerialComm::init(const std::string& device, int baudra
             boost::asio::serial_port_base::stop_bits::one));
 
     serial_->setTimeout(boost::posix_time::seconds(1)); // TODO: timeout config
-    serial_->writeString("V\r\n");
-    std::string result = serial_->readStringUntil("\r\n");
 
-    // TODO: try/catch
-    if (fw_version != result) {
+    std::string response;
+    if (not send_command("V", response))
+    {
+      return false;
+    }
+
+    if (fw_version != response) {
       return false;
     }
 
@@ -45,62 +48,42 @@ void AR3EncoderSwitchMotorSerialComm::calibrate_joints()
 
 bool AR3EncoderSwitchMotorSerialComm::get_joint_encoder_counts(std::vector<int>& encoder_counts)
 {
-  // Request the joint encoder counts
-  serial_->writeString("E\r\n");
-  std::string jp_result;
-  try {
-    jp_result = serial_->readStringUntil("\r\n");
-  } catch (const timeout_exception& e) {
-    std::cout << "Timeout!" << std::endl;
-  } catch (const boost::system::system_error& e) {
-    std::cout << "Exception: " << e.what() << std::endl;
+  std::string response;
+  if (not send_command("E", response))
+  {
+    return false;
   }
-  return parse_list(jp_result, ",", encoder_counts.size()+1, encoder_counts);
+  return parse_list(response, ",", encoder_counts.size()+1, encoder_counts);
 }
 
 bool AR3EncoderSwitchMotorSerialComm::get_joint_positions(std::vector<double>& joint_positions)
 {
-  // Request the joint encoder counts
-  serial_->writeString("P\r\n");
-  std::string jp_result;
-  try {
-    jp_result = serial_->readStringUntil("\r\n");
-  } catch (const timeout_exception& e) {
-    std::cout << "Timeout!" << std::endl;
-  } catch (const boost::system::system_error& e) {
-    std::cout << "Exception: " << e.what() << std::endl;
+  std::string response;
+  if (not send_command("P", response))
+  {
+    return false;
   }
-  return parse_list(jp_result, ",", joint_positions.size()+1, joint_positions);
+  return parse_list(response, ",", joint_positions.size()+1, joint_positions);
 }
 
 bool AR3EncoderSwitchMotorSerialComm::get_status_bits(std::vector<unsigned int>& status_bits)
 {
-  // Request the joint encoder counts
-  serial_->writeString("Q\r\n");
-  std::string status_result;
-  try {
-    status_result = serial_->readStringUntil("\r\n");
-  } catch (const timeout_exception& e) {
-    std::cout << "Timeout!" << std::endl;
-  } catch (const boost::system::system_error& e) {
-    std::cout << "Exception: " << e.what() << std::endl;
+  std::string response;
+  if (not send_command("Q", response))
+  {
+    return false;
   }
-  return parse_list(status_result, ",", 3, status_bits);
+  return parse_list(response, ",", 3, status_bits);
 }
 
 bool AR3EncoderSwitchMotorSerialComm::get_limit_switch_rising_edges(std::vector<double>& limit_switches)
 {
-  // Request the joint encoder counts
-  serial_->writeString("W\r\n");
-  std::string status_result;
-  try {
-    status_result = serial_->readStringUntil("\r\n");
-  } catch (const timeout_exception& e) {
-    std::cout << "Timeout!" << std::endl;
-  } catch (const boost::system::system_error& e) {
-    std::cout << "Exception: " << e.what() << std::endl;
+  std::string response;
+  if (not send_command("W", response))
+  {
+    return false;
   }
-  return parse_list(status_result, ",", limit_switches.size()+1, limit_switches);
+  return parse_list(response, ",", limit_switches.size()+1, limit_switches);
 }
 
 bool AR3EncoderSwitchMotorSerialComm::set_joint_positions(const std::vector<double>& desired_joint_positions)
@@ -109,16 +92,27 @@ bool AR3EncoderSwitchMotorSerialComm::set_joint_positions(const std::vector<doub
   for (const auto& p : desired_joint_positions) {
     cmd += std::to_string(p) + ",";
   }
-  serial_->writeString(cmd + "\r\n");
+
   std::string response;
+  if (not send_command(cmd, response))
+  {
+    return false;
+  }
+  return response == "d,OK";
+}
+
+bool AR3EncoderSwitchMotorSerialComm::send_command(const std::string& cmd, std::string& response)
+{
+  serial_->writeString(cmd + "\n");
   try {
     response = serial_->readStringUntil("\r\n");
+    return true;
   } catch (const timeout_exception& e) {
     std::cout << "Timeout!" << std::endl;
   } catch (const boost::system::system_error& e) {
     std::cout << "Exception: " << e.what() << std::endl;
   }
-  return response == "d,OK";
+  return false;
 }
 
 } // namespace ar3_hardware_driver
