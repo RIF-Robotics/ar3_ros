@@ -109,6 +109,13 @@ public:
   void write(const std::vector<char> & data);
 
   /**
+     * Write data
+     * \param data to be sent through the serial device
+     * \throws boost::system::system_error if any error
+     */
+  void write(const std::vector<unsigned char> & data);
+
+  /**
     * Write a string. Can be used to send ASCII data to the serial device.
     * To send binary data, use write()
     * \param s string to send
