@@ -8,7 +8,8 @@ Contains the ROS2 packages for the AR3 robot arm
     $ cd ~/ros2/ar3_ws/src
     $ git clone https://github.com/RIF-Robotics/ar3_ros.git
     $ cd ..
-    $ source /opt/ros/foxy/setup.bash
+    $ source /opt/ros/humble/setup.bash
+    $ rosdep install -iy --from-paths src
     $ colcon build --symlink-install
 
 ## Visualize AR3 in rviz
