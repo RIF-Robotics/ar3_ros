@@ -13,7 +13,7 @@
 
 #include "rclcpp/duration.hpp"
 #include "rclcpp/time.hpp"
-#include "status_controller_parameters.hpp"
+#include <ar3_controllers/status_controller_parameters.hpp>
 
 namespace ar3_controllers
 {
